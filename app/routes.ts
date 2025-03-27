@@ -4,5 +4,6 @@ export default [
   index("routes/index.tsx"),
   route("invitees", "routes/invitee.tsx"),
   route("location", "routes/location.tsx"),
-  route("activities", "routes/activity.tsx"),
+  route("dateTime", "routes/dateTime.tsx"),
+  route("activity", "routes/activity.tsx"),
 ] satisfies RouteConfig;

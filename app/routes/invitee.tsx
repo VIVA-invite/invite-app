@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PillButton from "~/utils/pillButton";
 
 type Invitee = {
   name: string;
@@ -25,7 +26,8 @@ export default function Invitee() {
   
 
   return (
-    <div className="space-y-4">
+    <main className="max-w-md mx-auto p-6 space-y-6">
+        <div className="text-3xl font-bold mb-10 text-black flex items-center">Who’s coming</div>
       <div className="flex gap-2">
         <input
           type="text"
@@ -138,7 +140,7 @@ export default function Invitee() {
             </div>
         </div>
         )}
-
-    </div>
+        <PillButton to="/"> Back to Home</PillButton>
+    </main>
   );
 }

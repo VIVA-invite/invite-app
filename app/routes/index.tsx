@@ -3,8 +3,8 @@ import { Link } from "react-router";
 const sections = [
   { label: "Invitees", path: "/invitees" },
   { label: "Location", path: "/location" },
-  { label: "Activities", path: "/activities" },
-  { label: "Date & Time", path: "/date" },
+  { label: "Date & Time", path: "/dateTime" },
+  { label: "Activities", path: "/activity" },
 ];
 
 export default function Index() {

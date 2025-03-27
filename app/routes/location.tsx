@@ -1,5 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from "react";
-import { searchPlaces } from "../utils/nominatimSearch";
+import { searchPlaces } from "~/utils/nominatimSearch";
+import PillButton from "~/utils/pillButton";
 
 interface PlaceResult {
   lat: string;
@@ -73,6 +74,7 @@ export default function LocationSearch() {
           label={selectedPosition?.display_name}
         />
       </Suspense>
+      <PillButton to="/"> Back to Home</PillButton>
     </div>
   );
 }
