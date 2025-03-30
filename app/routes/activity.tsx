@@ -128,6 +128,7 @@ export default function Activity() {
             })}
             </div>
 
+            <PillButton to="/invitee">Next</PillButton>
             <PillButton to="/"> Back to Home</PillButton>
         </main>
     );

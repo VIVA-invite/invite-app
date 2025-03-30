@@ -1,10 +1,13 @@
 import { Link } from "react-router";
 
 const sections = [
-  { label: "Invitees", path: "/invitees" },
-  { label: "Location", path: "/location" },
+  { label: "Type", path: "/partyType" },
+  { label: "Theme", path: "/theme" },
   { label: "Date & Time", path: "/dateTime" },
   { label: "Activities", path: "/activity" },
+  { label: "Invitees", path: "/invitee" },
+  { label: "Location", path: "/location" },
+  // { label: "Add Some Sparkle ✨", path: "/extra" },
 ];
 
 export default function Index() {

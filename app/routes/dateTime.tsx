@@ -1,31 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import PillButton from "~/utils/pillButton";
 
 export default function DateTime() {
-  const navigate = useNavigate();
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
-  const isComplete = date && startTime && endTime;
-
-  const handleNext = () => {
-    if (isComplete) {
-      // save to context/state for the activity page
-      navigate("/activity", {
-        state: {
-          date: date,
-          startTime: startTime,
-          endTime: endTime,
-        }
-      });      
-    }
-  };
-
-  const backHome = () => {
-    navigate("/index");
-  };
+  // const isComplete = date && startTime && endTime;
 
   return (
     <main className="max-w-md mx-auto p-6 space-y-6">
@@ -67,18 +48,7 @@ export default function DateTime() {
         </div>
       )}
 
-      {/* Continue Button */}
-      <button
-        disabled={!isComplete}
-        onClick={handleNext}
-        className={`w-full mt-6 py-2 rounded-lg font-semibold ${
-          isComplete
-            ? "bg-blue-500 text-white hover:bg-blue-600"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-        }`}
-      >
-        Next: Add Activities →
-      </button>
+      <PillButton to="/activity">Next</PillButton>
       <PillButton to="/"> Back to Home</PillButton>
     </main>
   );

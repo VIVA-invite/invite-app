@@ -140,6 +140,8 @@ export default function Invitee() {
             </div>
         </div>
         )}
+
+        <PillButton to="/location">Next</PillButton>
         <PillButton to="/"> Back to Home</PillButton>
     </main>
   );
