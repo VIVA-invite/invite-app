@@ -49,7 +49,7 @@ export default function DateTime() {
       )}
 
       <PillButton to="/activity">Next</PillButton>
-      <PillButton to="/"> Back to Home</PillButton>
+      <PillButton to="/">Home</PillButton>
     </main>
   );
 }

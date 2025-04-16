@@ -142,7 +142,7 @@ export default function Invitee() {
         )}
 
         <PillButton to="/location">Next</PillButton>
-        <PillButton to="/"> Back to Home</PillButton>
+        <PillButton to="/">Home</PillButton>
     </main>
   );
 }

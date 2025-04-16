@@ -74,7 +74,7 @@ export default function LocationSearch() {
           label={selectedPosition?.display_name}
         />
       </Suspense>
-      <PillButton to="/"> Back to Home</PillButton>
+      <PillButton to="/">Home</PillButton>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Button } from "~/components/ui/button"
 import { Card, CardContent } from "~/components/ui/card"
 import { Input } from "~/components/ui/input"
 import { cn } from "~/lib/utils"
+import PillButton from "~/utils/pillButton"
 
 const vibeTags = {
   colors: ["Pastel", "Neon", "Monochrome", "Gold & Glitter"],
@@ -68,12 +69,12 @@ export default function ThemePage() {
       {suggestion && (
         <Card className="mt-4 border-dashed border-2 border-pink-500 animate-pulse">
           <CardContent className="p-4 text-pink-700">
-            💡 {suggestion}
+             {suggestion}
           </CardContent>
         </Card>
       )}
 
-      {/* Moodboard Preview (Simplified) */}
+      {/* Moodboard Preview */}
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-2">Your Theme Vibe Preview</h2>
         <div className="border rounded-xl p-4 bg-muted text-muted-foreground">
@@ -89,7 +90,8 @@ export default function ThemePage() {
       </div>
 
       <div className="mt-6 text-right">
-        <Button>Save & Continue</Button>
+        <PillButton>Home</PillButton>
+        <PillButton to="/dateTime">Next</PillButton>
       </div>
     </div>
   )
