@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from "react";
-import { searchPlaces } from "~/utils/nominatimSearch";
-import PillButton from "~/utils/pillButton";
+import { searchPlaces } from "src/app/utils/nominatimSearch";
+import PillButton from "src/app/utils/pillButton";
 
 interface PlaceResult {
   lat: string;
@@ -17,7 +17,7 @@ interface SelectedPosition {
 // Lazy load to avoid SSR issues
 const LeafletMap = lazy(() => import("../utils/locationSearch"));
 
-export default function LocationSearch() {
+export default function Location() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<SelectedPosition | null>(null);

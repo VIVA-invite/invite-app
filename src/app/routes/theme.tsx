@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Button } from "~/components/ui/button"
-import { Card, CardContent } from "~/components/ui/card"
-import { Input } from "~/components/ui/input"
-import { cn } from "~/lib/utils"
-import PillButton from "~/utils/pillButton"
+import { Button } from "src/app/components/ui/button"
+import { Card, CardContent } from "src/app/components/ui/card"
+import { Input } from "src/app/components/ui/input"
+import { cn } from "src/app/lib/utils"
+import PillButton from "src/app/utils/pillButton"
 
 const vibeTags = {
   colors: ["Pastel", "Neon", "Monochrome", "Gold & Glitter"],
@@ -12,7 +12,7 @@ const vibeTags = {
   style: ["Cottagecore", "Retro", "Sci-fi", "Fairytale", "Minimalist"]
 }
 
-export default function ThemePage() {
+export default function Theme() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customTheme, setCustomTheme] = useState("")
 
@@ -90,7 +90,7 @@ export default function ThemePage() {
       </div>
 
       <div className="mt-6 text-right">
-        <PillButton>Home</PillButton>
+        <PillButton to="/">Home</PillButton>
         <PillButton to="/dateTime">Next</PillButton>
       </div>
     </div>

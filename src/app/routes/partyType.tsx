@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useInvitation } from "~/utils/invitationContext";
-import PillButton from "~/utils/pillButton";
+import { useInvitation } from "src/app/utils/invitationContext";
+import PillButton from "src/app/utils/pillButton";
 
 const predefinedTypes = [
   "Birthday Party",
@@ -13,7 +13,7 @@ const predefinedTypes = [
   "Housewarming",
 ];
 
-export default function TypesOfParty () {
+export default function PartyType () {
   const { eventType, setEventType } = useInvitation();
   const [customType, setCustomType] = useState("");
 

@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
-import PillButton from "~/utils/pillButton";
+import PillButton from "src/app/utils/pillButton";
 
 type Activity = {
     id: number;

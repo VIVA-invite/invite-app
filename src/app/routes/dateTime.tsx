@@ -1,5 +1,5 @@
 import { useState } from "react";
-import PillButton from "~/utils/pillButton";
+import PillButton from "src/app/utils/pillButton";
 
 export default function DateTime() {
   const [date, setDate] = useState("");
