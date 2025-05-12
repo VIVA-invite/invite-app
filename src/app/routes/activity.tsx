@@ -1,6 +1,9 @@
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
-import PillButton from "src/app/utils/pillButton";
+import PillButton from "../utils/pillButton";
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
+import React from "react";
 
 type Activity = {
     id: number;
@@ -46,17 +49,18 @@ export default function Activity() {
                 const newId = Date.now();
                 const [hours, minutes] = time.split(":").map(Number);
                 const totalMins = hours * 60 + minutes;
-                const relativeTime = totalMins - startMinutes;
-
-                if (relativeTime < 0 || relativeTime > totalDuration) {
+                if (totalMins < startMinutes || totalMins > endMinutes) {
                 alert("Time is out of range!");
                 return;
                 }
 
-                setActivities((prev) => [
-                ...prev,
-                { id: newId, name, time: relativeTime },
-                ]);
+                setActivities((prev) => {
+                    const updated = [...prev, { id: newId, name, time: totalMins }];
+                    return updated.sort((a, b) => {
+                      if (a.time === b.time) return -1; // flip their order if equal
+                      return a.time - b.time;
+                    });
+                  });
 
                 setName("");
                 setTime("");
@@ -87,49 +91,74 @@ export default function Activity() {
             </form>
             
             {/* Timeline Bar */}
-            <div className="relative w-full max-w-4xl h-28">
+            <div className="relative w-full max-w-4xl h-28 flex flex-col gap-6">
             {/* Thin timeline bar */}
-            <div className="absolute top-1/2 left-0 right-0 h-3 bg-blue-200 rounded-full -translate-y-1/2" />
+            {/* <div className="w-full h-3 bg-blue-200 rounded-full" /> */}
     
-            {/* Activity Icons */}
-            {activities.map((activity) => {
-                const leftPercent = (activity.time / totalDuration) * 100;
-    
-                return (
-                <div
-                    key={activity.id}
-                    className="absolute text-center"
-                    style={{ left: `${leftPercent}%`, top: "0" }}
-                    draggable
-                    onDragEnd={(e) => {
-                    const bar = e.currentTarget.parentElement;
-                    if (!bar) return;
-    
-                    const barRect = bar.getBoundingClientRect();
-                    const offsetX = e.clientX - barRect.left;
-                    const newTime = Math.round(
-                        (offsetX / barRect.width) * totalDuration
-                    );
-                    setActivities((prev) =>
-                        prev.map((a) =>
-                        a.id === activity.id ? { ...a, time: newTime } : a
-                        )
-                    );
+            {/* Single Slider for all activities */}
+            {activities.length > 0 && (
+                <Slider
+                    range
+                    allowCross={true}
+                    step={5}
+                    onChange={(values) => {
+                        if (Array.isArray(values)) {
+                            const updated = activities.map((a, i) => ({ ...a, time: values[i] }));
+                            setActivities(updated.sort((a, b) => {
+                                if (a.time === b.time) return -1; // flip their order if equal
+                                return a.time - b.time;
+                            }));
+                        }
                     }}
-                >
-                    <div className="w-16 h-16 rounded-full bg-pink-400 text-white text-sm flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition mx-auto">
-                    {activity.name}
-                    </div>
-                    <div className="text-xs text-gray-700 mt-1 font-medium">
-                    {formatTime(startMinutes + activity.time)}
-                    </div>
-                </div>
-                );
-            })}
+                    min={startMinutes}
+                    max={endMinutes}
+                    value={activities.map(a => a.time)}
+                    
+                    trackStyle={[{ backgroundColor: '#bfdbfe' }]}
+                    railStyle={{ backgroundColor: '#bfdbfe' }}
+                    handleRender={(node, props) => {
+                        const activity = activities[props.index];
+                        const [hovered, setHovered] = React.useState(false);
+                        return React.cloneElement(node, {
+                            style: {
+                                ...node.props.style,
+                                position: 'absolute',
+                                top: '-25%',
+                                transform: 'translateY(0%)',
+                                height: '32px',
+                                backgroundColor: '#ffffff',
+                                border: `2px solid ${hovered ? '#0EA5E9' : '#D1D5DB'}`,
+                                borderRadius: '9999px',
+                                padding: '0 0.75rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                whiteSpace: 'nowrap',
+                                userSelect: 'none',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: '#1f2937',
+                                width: 'fit-content',
+                                transition: 'border-color 0.2s ease',
+                            },
+                            onMouseEnter: () => setHovered(true),
+                            onMouseLeave: () => setHovered(false),
+                            children: (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                  <div style = {{fontSize: '14px', alignItems: 'center', transform: 'translateY(40%)'}}>{activity.name}</div>
+                                  <div style={{ fontSize: '12px', color: '#6B7280', transform: 'translateY(75%)'}}>{formatTime(activity.time)}</div>
+                                </div>
+                                
+                              ),
+                        });
+                    }}
+                />
+            )}
             </div>
 
             <PillButton to="/invitee">Next</PillButton>
             <PillButton to="/"> Back to Home</PillButton>
         </main>
     );
-}  
+} 

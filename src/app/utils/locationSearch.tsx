@@ -1,38 +1,57 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import type { LatLngExpression } from "leaflet";
-import L from "leaflet";
+import { useEffect, useRef, useState } from "react";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 
-// Fix Leaflet's default icon path issues in Vite
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+const containerStyle = {
+  width: "100%",
+  height: "400px",
+};
 
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).href,
-  iconUrl: new URL("leaflet/dist/images/marker-icon.png", import.meta.url).href,
-  shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).href,
-});
+const defaultCenter = {
+  lat: 47.6062,
+  lng: -122.3321,
+};
 
+const LocationPicker = () => {
+  const [center, setCenter] = useState(defaultCenter);
+  const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(null);
+  const autocompleteRef = useRef<HTMLElement | null>(null);
 
-interface Props {
-  position: LatLngExpression;
-  label?: string;
-}
+  useEffect(() => {
+    const el = autocompleteRef.current as any;
+    if (!el) return;
 
-export default function locationSearch({ position, label }: Props) {
+    const handlePlaceChange = () => {
+      const place = el?.value?.place;
+      if (!place?.location) return;
+
+      const { latitude, longitude } = place.location;
+      const newCenter = { lat: latitude, lng: longitude };
+      setCenter(newCenter);
+      setMarker(newCenter);
+    };
+
+    el.addEventListener("gmpx-placeautocomplete-placechange", handlePlaceChange);
+    return () => el.removeEventListener("gmpx-placeautocomplete-placechange", handlePlaceChange);
+  }, []);
+
   return (
-    <MapContainer
-      center={position}
-      zoom={13}
-      scrollWheelZoom={true}
-      style={{ height: "400px", width: "100%" }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Marker position={position}>
-        <Popup>{label}</Popup>
-      </Marker>
+    <div className="flex flex-col gap-4">
+      <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={["places"]}>
+        <gmpx-place-autocomplete
+          ref={autocompleteRef}
+          style={{
+            padding: "0.5rem",
+            border: "1px solid #ccc",
+            borderRadius: "6px",
+          }}
+        ></gmpx-place-autocomplete>
 
-    </MapContainer>
+        <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={14}>
+          {marker && <Marker position={marker} />}
+        </GoogleMap>
+      </LoadScript>
+    </div>
   );
-}
+};
+
+export default LocationPicker;
