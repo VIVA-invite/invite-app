@@ -2,7 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import PillButton from "~/utils/pillButton";
 import Slider from 'rc-slider';
-import 'rc-slider/assets/index.css';
+import 'rc-slider/assets/index.css'; // (if you're not already importing this)
 import React from "react";
 
 type Activity = {
@@ -100,7 +100,6 @@ export default function Activity() {
                 <Slider
                     range
                     allowCross={true}
-                    step={5}
                     onChange={(values) => {
                         if (Array.isArray(values)) {
                             const updated = activities.map((a, i) => ({ ...a, time: values[i] }));
@@ -114,21 +113,23 @@ export default function Activity() {
                     max={endMinutes}
                     value={activities.map(a => a.time)}
                     
-                    trackStyle={[{ backgroundColor: '#bfdbfe' }]}
+                    trackStyle={[{ backgroundColor: '#000000' }]}
                     railStyle={{ backgroundColor: '#bfdbfe' }}
                     handleRender={(node, props) => {
                         const activity = activities[props.index];
-                        const [hovered, setHovered] = React.useState(false);
                         return React.cloneElement(node, {
                             style: {
                                 ...node.props.style,
-                                position: 'absolute',
-                                top: '-25%',
-                                transform: 'translateY(0%)',
                                 height: '32px',
+                                minWidth: `${activity.name.length * 10 + 20}px`,
                                 backgroundColor: '#ffffff',
-                                border: `2px solid ${hovered ? '#0EA5E9' : '#D1D5DB'}`,
+                                border: '2px solid #D1D5DB',
                                 borderRadius: '9999px',
+                                lineHeight: '32px',
+                                color: '#1f2937',
+                                fontWeight: 500,
+                                fontSize: '14px',
+                                textAlign: 'center',
                                 padding: '0 0.75rem',
                                 cursor: 'pointer',
                                 display: 'flex',
@@ -136,21 +137,33 @@ export default function Activity() {
                                 justifyContent: 'center',
                                 whiteSpace: 'nowrap',
                                 userSelect: 'none',
-                                fontSize: '14px',
-                                fontWeight: 500,
-                                color: '#1f2937',
-                                width: 'fit-content',
-                                transition: 'border-color 0.2s ease',
                             },
-                            onMouseEnter: () => setHovered(true),
-                            onMouseLeave: () => setHovered(false),
                             children: (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                  <div style = {{fontSize: '14px', alignItems: 'center', transform: 'translateY(40%)'}}>{activity.name}</div>
-                                  <div style={{ fontSize: '12px', color: '#6B7280', transform: 'translateY(75%)'}}>{formatTime(activity.time)}</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ fontSize: '14px', fontWeight: 500 }}>{formatTime(activity.time)}</div>
+                                <div style={{
+                                  height: '32px',
+                                  minWidth: `${activity.name.length * 10 + 20}px`,
+                                  backgroundColor: '#ffffff',
+                                  border: '2px solid #D1D5DB',
+                                  borderRadius: '9999px',
+                                  lineHeight: '32px',
+                                  color: '#1f2937',
+                                  fontWeight: 500,
+                                  fontSize: '14px',
+                                  textAlign: 'center',
+                                  padding: '0 0.75rem',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  whiteSpace: 'nowrap',
+                                  userSelect: 'none',
+                                }}>
+                                  {activity.name}
                                 </div>
-                                
-                              ),
+                              </div>
+                            ),
                         });
                     }}
                 />
