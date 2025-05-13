@@ -1,14 +1,13 @@
 import { cn } from "src/app/lib/utils";
 import { Link } from "react-router-dom";
 
-interface PillButtonProps extends React.PropsWithChildren {
+interface PillButtonProps extends React.PropsWithChildren, React.ButtonHTMLAttributes<HTMLButtonElement> {
   to?: string;
   isSelected?: boolean;
   className?: string;
-  onClick?: () => void;
 }
 
-export default function PillButton({ to, className, children, isSelected, onClick }: PillButtonProps) {
+export default function PillButton({ to, className, children, isSelected, onClick, ...props }: PillButtonProps) {
   const baseClasses =
     "animate-fadeIn px-4 py-2 rounded-full border font-medium text-sm transition-all duration-300";
   const selectedClasses = isSelected
@@ -26,7 +25,7 @@ export default function PillButton({ to, className, children, isSelected, onClic
   }
 
   return (
-    <button className={fullClass} onClick={onClick}>
+    <button className={fullClass} onClick={onClick} {...props}>
       {children}
     </button>
   );
