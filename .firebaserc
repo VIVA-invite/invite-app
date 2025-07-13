@@ -1,5 +1,9 @@
 {
   "projects": {
-    "default": "invitation-app-cd62c"
-  }
+    "default": "invitation-app-cd62c",
+    "viva": "invitation-app-cd62c",
+    "viva-invite": "invitation-app-cd62c"
+  },
+  "targets": {},
+  "etags": {}
 }
