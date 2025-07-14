@@ -7,6 +7,7 @@ export default function Location() {
       <h1 className="text-2xl font-bold">Choose a Location</h1>
       <LocationPicker />
       <PillButton to="/">Home</PillButton>
+      <PillButton to="/confirmation">Next</PillButton>
     </div>
   );
 }

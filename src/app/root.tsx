@@ -49,7 +49,7 @@ export default function App() {
   );
 }
 
-// 🧹 Inlined type for error prop
+// Inlined type for error prop
 export function ErrorBoundary({ error }: { error: unknown }) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";

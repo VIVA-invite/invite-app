@@ -6,7 +6,10 @@ import DateTime from './routes/dateTime';
 import Activity from './routes/activity';
 import PartyType from './routes/partyType';
 import Theme from './routes/theme';
+import Confirmation from './routes/confirmation'
+import Guest from './routes/guest'
 import { InvitationProvider } from './utils/invitationContext';
+
 
 const routes = [
   {
@@ -15,6 +18,7 @@ const routes = [
       <InvitationProvider>
         <App />
       </InvitationProvider>
+      
     ),
     children: [
       { index: true, element: <Index /> },
@@ -24,6 +28,8 @@ const routes = [
       { path: 'activity', element: <Activity /> },
       { path: 'partyType', element: <PartyType /> },
       { path: 'theme', element: <Theme /> },
+      { path: 'confirmation', element: <Confirmation /> },
+      { path: 'guest/:inviteId', element: <Guest /> },
     ],
   },
 ];
