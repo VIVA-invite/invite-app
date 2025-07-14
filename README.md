@@ -17,7 +17,7 @@ Viva is a user-friendly web app that helps you plan and share events with style.
 - **Routing**: React Router  
 - **Maps**: Google Maps API  
 - **Backend**: Firebase / Google Cloud Run  
-- **UI Enhancements**: Custom icons, draggable elements, animations, and sound effects (in progress!)
+- **UI Enhancements**: Custom icons, draggable elements, animations
 
 ## 💡 Vision
 
