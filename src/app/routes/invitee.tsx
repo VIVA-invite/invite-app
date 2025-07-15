@@ -26,7 +26,7 @@ export default function Invitee() {
   
 
   return (
-    <main className="max-w-md mx-auto p-6 space-y-6">
+    <main className="max-w-md mx-auto p-6 bg-background space-y-6">
         <div className="text-3xl font-bold mb-10 text-black flex items-center">Who’s coming</div>
       <div className="flex gap-2">
         <input

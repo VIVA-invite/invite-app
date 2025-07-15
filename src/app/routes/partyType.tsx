@@ -36,7 +36,7 @@ export default function PartyType () {
 
   return (
     <main>
-        <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center">
         <h2 className="text-2xl font-semibold mb-4 text-center">What’s the Occasion?</h2>
 
         <div className="flex flex-wrap gap-2 mb-4">
