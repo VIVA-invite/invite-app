@@ -14,9 +14,9 @@ export default function Index() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
       <h1 className="text-3xl font-bold mb-10 text-black">Create Your Invite</h1>
-      <div className="flex items-center gap-4 flex-wrap justify-center">
+      <div className="flex items-center flex-wrap gap-2 justify-center">
         {sections.map((section, index) => (
-          <div key={section.path} className="flex items-center">
+          <div key={section.path} className="flex items-center gap-2">
             <PillButton to={section.path}>
               {section.label}
             </PillButton>
