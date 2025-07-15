@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
-import PillButton from "../utils/pillButton";
+import PillButton from "~/utils/pillButton";
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import React from "react";
@@ -38,7 +38,7 @@ export default function Activity() {
 
   
     return (
-        <main className="flex flex-col items-center justify-center min-h-screen bg-background px-4 gap-6 pad-6">      
+        <main className="flex flex-col items-center justify-center min-h-screen bg-gray-50 px-4 gap-6 pad-6">      
             <h1 className="text-3xl items-center font-bold">Plan Your Activities</h1>
             {/* Activity Input */}
             <form
