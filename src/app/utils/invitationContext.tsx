@@ -1,3 +1,6 @@
+/**
+ * Where current invitation data are stored before entering the database
+ */
 import React, { createContext, useContext, useState } from "react";
 
 type Activity = {

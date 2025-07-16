@@ -1,4 +1,6 @@
-// src/pages/Guest.tsx
+/**
+ * The final guest page where users can copy the invitation link
+ */
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";

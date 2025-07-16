@@ -1,4 +1,6 @@
-// src/pages/Confirm.tsx
+/**
+ * Confirmation page where user creates the invitation
+ */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInvitation } from "../utils/invitationContext"; // context holding event info

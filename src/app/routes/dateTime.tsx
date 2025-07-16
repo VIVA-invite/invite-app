@@ -1,3 +1,6 @@
+/**
+ * Page where user enters the date and time for the invitation
+ */
 import { useState } from "react";
 import PillButton from "src/app/utils/pillButton";
 

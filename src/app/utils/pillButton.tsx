@@ -1,3 +1,6 @@
+/**
+ * VIVA button: should be used throughout the app if possible
+ */
 import { cn } from "src/app/lib/utils";
 import { Link } from "react-router-dom";
 

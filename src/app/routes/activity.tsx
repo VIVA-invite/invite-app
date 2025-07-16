@@ -1,3 +1,6 @@
+/**
+ * Activity page with draggable timeline bar
+ */
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import PillButton from "../utils/pillButton";

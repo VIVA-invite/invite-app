@@ -1,3 +1,6 @@
+/**
+ * Home page
+ */
 import PillButton from "src/app/utils/pillButton";
 
 const sections = [

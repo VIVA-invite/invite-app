@@ -1,3 +1,6 @@
+/**
+ * Pick location for the location page
+ */
 import { useState, useEffect } from "react";
 import { GoogleMap, LoadScript, Marker, Autocomplete } from "@react-google-maps/api";
 import {useInvitation} from "./invitationContext";

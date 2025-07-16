@@ -1,3 +1,6 @@
+/**
+ * Page for user to enter location
+ */
 import PillButton from "src/app/utils/pillButton";
 import LocationPicker from "../utils/locationSearch";
 

@@ -1,3 +1,6 @@
+/**
+ * User enter the theme of the party (spooky etc.)
+ */
 import { useState } from "react"
 import { Button } from "src/app/components/ui/button"
 import { Card, CardContent } from "src/app/components/ui/card"

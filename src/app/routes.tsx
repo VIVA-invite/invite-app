@@ -1,3 +1,6 @@
+/**
+ * Routing for all the pages
+ */
 import App from './root';
 import Index from './routes/index';
 import Invitee from './routes/invitee';

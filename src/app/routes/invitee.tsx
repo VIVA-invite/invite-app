@@ -1,3 +1,6 @@
+/**
+ * Page where users can type in invitee and invitee emails to send the invitation
+ */
 import { useState } from "react";
 import PillButton from "src/app/utils/pillButton";
 

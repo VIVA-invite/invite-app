@@ -1,3 +1,6 @@
+/**
+ * User determining the type of the invitation (Graduation party, birthday etc.)
+ */
 import React, { useState } from "react";
 import { useInvitation } from "src/app/utils/invitationContext";
 import PillButton from "src/app/utils/pillButton";
