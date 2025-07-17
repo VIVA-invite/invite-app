@@ -45,16 +45,15 @@ export default function Theme() {
       {Object.entries(vibeTags).map(([group, tags]) => (
         <div key={group}>
           <h2 className="text-xl font-semibold capitalize mt-4 mb-2">{group}</h2>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {tags.map(tag => (
-              <Button
+              <PillButton
                 key={tag}
-                variant={selectedTags.includes(tag) ? "default" : "outline"}
                 onClick={() => toggleTag(tag)}
-                className={cn("rounded-full px-4 py-2 text-sm")}
+                isSelected={selectedTags.includes(tag)}
               >
                 {tag}
-              </Button>
+              </PillButton>
             ))}
           </div>
         </div>
