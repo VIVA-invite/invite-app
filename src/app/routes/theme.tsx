@@ -5,7 +5,6 @@ import { useState } from "react"
 import { Button } from "src/app/components/ui/button"
 import { Card, CardContent } from "src/app/components/ui/card"
 import { Input } from "src/app/components/ui/input"
-import { cn } from "src/app/lib/utils"
 import PillButton from "src/app/utils/pillButton"
 
 const vibeTags = {
