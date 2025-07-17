@@ -92,7 +92,7 @@ export default function Theme() {
         </div>
       </div>
 
-      <div className="mt-6 text-right">
+      <div className="fixed bottom-6 right-6 flex gap-2">
         <PillButton to="/">Home</PillButton>
         <PillButton to="/dateTime">Next</PillButton>
       </div>
