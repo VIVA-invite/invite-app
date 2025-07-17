@@ -9,6 +9,8 @@ import PillButton from "./pillButton";
 const containerStyle = {
   width: "100%",
   height: "400px",
+  borderRadius: "12px",
+  border: "1px solid #ccc",
 };
 
 const defaultCenter = {
@@ -83,7 +85,7 @@ const LocationPicker = () => {
               style={{
                 padding: "0.5rem",
                 border: "1px solid #ccc",
-                borderRadius: "6px",
+                borderRadius: "12px",
                 width: "100%",
               }}
             />

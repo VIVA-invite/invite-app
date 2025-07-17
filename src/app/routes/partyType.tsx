@@ -70,9 +70,11 @@ export default function PartyType () {
         {eventType && (
             <div className="mt-4">
             <h3 className="text-lg font-medium mb-2">Selected Party Type:</h3>
-            {eventType.map((type) =>
-                <PillButton isSelected >{type}</PillButton>
+              <div className="flex gap-1">
+                {eventType.map((type) =>
+                  <PillButton>{type}</PillButton>
                 )}
+              </div>
             </div>
         )}
         
