@@ -9,6 +9,7 @@ import {
 
 import "./app.css";
 import { InvitationProvider } from "./utils/invitationContext";
+import Navbar from "./components/NavBar";
 
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -44,6 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <InvitationProvider>
+      <Navbar />
       <Outlet />
     </InvitationProvider>
   );

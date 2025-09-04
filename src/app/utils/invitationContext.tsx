@@ -1,5 +1,5 @@
 /**
- * Where current invitation data are stored before entering the database
+ * Where current invitation data are stored before entering the database. For when2meet version
  */
 import React, { createContext, useContext, useState } from "react";
 

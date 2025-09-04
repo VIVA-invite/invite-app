@@ -12,6 +12,8 @@ import Theme from './routes/theme';
 import Confirmation from './routes/confirmation'
 import Guest from './routes/guest'
 import { InvitationProvider } from './utils/invitationContext';
+import Event from './routes/events';
+import DashboardRoute from './routes/dashboard';
 
 
 const routes = [
@@ -33,7 +35,9 @@ const routes = [
       { path: 'theme', element: <Theme /> },
       { path: 'confirmation', element: <Confirmation /> },
       { path: 'guest/:inviteId', element: <Guest /> },
-    ],
+      { path: "/event",element: <Event />},
+      { path: "/dashboard",element: <DashboardRoute />},
+    ]
   },
 ];
 

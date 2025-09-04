@@ -5,16 +5,20 @@
     "moduleResolution": "Node",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "jsx": "react-jsx",
+
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+
     "baseUrl": ".",
     "paths": {
-      "src/*": ["./src/*"]
+      "src/*": ["./src/*"],
+      "@/*": ["src/*"]
     },
-    "types": ["vite/client"]
+
+    "types": ["react", "react-dom", "vite/client"]
   },
   "include": ["src", "vite.config.ts", "index.html"]
 }
