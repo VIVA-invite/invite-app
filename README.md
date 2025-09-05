@@ -26,4 +26,4 @@ Viva is designed to be inclusive, flexible, and delightful. Whether you're plann
 ---
 
 📸 *More screenshots and setup instructions coming soon!*
-Link: https://invitation-app-cd62c.web.app/ 
+Link: https://viva-invite.web.app/
