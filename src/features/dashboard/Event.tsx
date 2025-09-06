@@ -1,3 +1,6 @@
+/**
+ * Dashboard for individual events (when you click on it on dashboard)
+ */
 import React from "react";
 import { Calendar, MapPin, Users, ListChecks, Plus, Settings } from "lucide-react";
 import PillButton from "src/app/utils/pillButton";
@@ -52,7 +55,7 @@ function Stat({ label, value }: { label: string; value: string | number }): Reac
   );
 }
 
-export default function Event(): React.ReactElement {
+export default function EventDashboard(): React.ReactElement {
   const { name, date, location, rsvp, actions, upcoming } = mockEvent;
   const dateObj = new Date(date);
 
@@ -69,7 +72,7 @@ export default function Event(): React.ReactElement {
         </div>
         <div className="flex gap-2">
           <PillButton className="flex items-center gap-2"><Settings className="h-4 w-4"/>Settings</PillButton>
-          <PillButton className="flex items-center gap-2"><Plus className="h-4 w-4"/>New Event</PillButton>
+          <PillButton className="flex items-center gap-2" to="/"><Plus className="h-4 w-4"/>New Event</PillButton>
         </div>
       </div>
 
