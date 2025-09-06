@@ -19,11 +19,14 @@ type InvitationData = {
   location: string;
   setLocation: (value: string) => void;
 
-  startDateTime: string | null;
-  setStartDateTime: (value: string) => void;
+  date: string | null;
+  setDate: (value: string) => void;
 
-  endDateTime: string | null;
-  setEndDateTime: (value: string) => void;
+  startTime: string | null;
+  setStartTime: (value: string) => void;
+
+  endTime: string | null;
+  setEndTime: (value: string) => void;
 
   invitees: string[];
   setInvitees: (value: string[]) => void;
@@ -38,8 +41,9 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [eventType, setEventType] = useState<string[]>([]);
   const [theme, setTheme] = useState<string>("");
   const [location, setLocation] = useState<string>("");
-  const [startDateTime, setStartDateTime] = useState<string | null>(null);
-  const [endDateTime, setEndDateTime] = useState<string | null>(null);
+  const [date, setDate] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState<string | null>(null);
+  const [endTime, setEndTime] = useState<string | null>(null);
   const [invitees, setInvitees] = useState<string[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
 
@@ -52,10 +56,12 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTheme,
         location,
         setLocation,
-        startDateTime,
-        setStartDateTime,
-        endDateTime,
-        setEndDateTime,
+        date,
+        setDate,
+        startTime,
+        setStartTime,
+        endTime,
+        setEndTime,
         invitees,
         setInvitees,
         activities,

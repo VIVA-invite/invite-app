@@ -3,11 +3,21 @@
  */
 import { useState } from "react";
 import PillButton from "src/app/utils/pillButton";
+import { useInvitation } from "src/app/utils/invitationContext";
 
 export default function DateTime() {
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const {
+    date, 
+    setDate, 
+    startTime, 
+    setStartTime, 
+    endTime, 
+    setEndTime
+  } = useInvitation();
+  
+  // const [date, setDate] = useInvitation();
+  // const [startTime, setStartTime] = useInvitation();
+  // const [endTime, setEndTime] = useInvitation();
 
   // const isComplete = date && startTime && endTime;
 
