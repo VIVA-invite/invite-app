@@ -1,13 +1,44 @@
 /**
  * Page where user enters the date and time for the invitation
  */
-import { useState } from "react";
+import { JapaneseYen } from "lucide-react";
+import { useEffect, useState } from "react";
 import PillButton from "src/app/utils/pillButton";
+
+const STORAGE_KEY = "viva:dateTime";
 
 export default function DateTime() {
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as {
+          date?: string;
+          startTime?: string;
+          endTime?: string;
+        };
+        if (typeof saved.date === "string") setDate(saved.date);
+        if (typeof saved.startTime === "string") setStartTime(saved.startTime);
+        if (typeof saved.endTime === "string") setEndTime(saved.endTime);
+      }
+    } catch {}
+    finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ date, startTime, endTime })
+    );
+  }, [hydrated, date, startTime, endTime]);
 
   // const isComplete = date && startTime && endTime;
 

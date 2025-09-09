@@ -1,7 +1,7 @@
 /**
  * User determining the type of the invitation (Graduation party, birthday etc.)
  */
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useInvitation } from "src/app/utils/invitationContext";
 import PillButton from "src/app/utils/pillButton";
 
@@ -16,10 +16,34 @@ const predefinedTypes = [
   "Housewarming",
 ];
 
+const STORAGE_KEY = "viva:partyType";
+
 export default function PartyType () {
   const { eventType, setEventType } = useInvitation();
   const [customType, setCustomType] = useState("");
 
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as string[];
+        if (Array.isArray(saved)) {
+          setEventType(saved);
+        }
+      }
+    } catch {}
+    finally {
+      setHydrated(true);
+    }
+  }, [setEventType]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(eventType));
+  }, [hydrated, eventType]);
+  
   const handleSelect = (type: string) => {
     if (eventType.includes(type)) {
       setEventType(eventType.filter(t => t !== type));

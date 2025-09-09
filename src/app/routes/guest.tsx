@@ -48,6 +48,14 @@ export default function Guest() {
           >
             Copy Link 📋
           </PillButton>
+
+          <br /> <br />
+          <p className="text-sm text-gray-500">Want to save progress?</p>
+          <br />
+          <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
+            Log in as a Host
+          </PillButton>
+
         </>
       ) : (
         <p>Loading invitation...</p>

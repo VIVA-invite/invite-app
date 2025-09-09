@@ -2,7 +2,7 @@
  * Activity page with draggable timeline bar
  */
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PillButton from "../utils/pillButton";
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
@@ -13,6 +13,8 @@ type Activity = {
     name: string;
     time: number; // in minutes
 };
+
+const STORAGE_KEY = "viva:activityState";
 
 const formatTime = (totalMinutes: number) => {
     const h = Math.floor(totalMinutes / 60);
@@ -33,12 +35,56 @@ export default function Activity() {
   
     const startMinutes = parseTime(startTime);
     const endMinutes = parseTime(endTime);
-    const totalDuration = endMinutes - startMinutes;
+    // const totalDuration = endMinutes - startMinutes;
   
     const [activities, setActivities] = useState<Activity[]>([]);
     const [name, setName] = useState("");
     const [time, setTime] = useState("");
 
+    const [hydrated, setHydrated] = useState(false);
+
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+
+            const saved = JSON.parse(raw) as {
+                startTime?: string;
+                endTime?: string;
+                activities?: Activity[];
+                name?: string;
+                time?: string;
+            };
+
+            const sM = parseTime(saved.startTime ?? startTime);
+            const eM = parseTime(saved.endTime ?? endTime);
+
+            const clamp = (v: number) => Math.min(Math.max(v, startMinutes), endMinutes);
+
+            const restoreActs = (saved.activities || []).map(a => ({ ...a, time: clamp(a.time)}))
+                                                        .sort((a, b) => (a.time === b.time ? -1 : a.time - b.time));
+            setActivities(restoreActs);
+            if (typeof saved.name === "string") setName(saved.name);
+            if (typeof saved.time === "string") setTime(saved.time);
+        } catch {}
+        finally {
+            setHydrated(true);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!hydrated) return;
+        const payload = JSON.stringify({
+            startTime,
+            endTime,
+            activities,
+            name,
+            time,
+        });
+        localStorage.setItem(STORAGE_KEY, payload);
+    }, [startTime, endTime, activities, name, time]);
+
+    const totalDuration = endMinutes - startMinutes;
   
     return (
         <main className="flex flex-col items-center justify-center min-h-screen bg-background px-4 gap-6 pad-6">      

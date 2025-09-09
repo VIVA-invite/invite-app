@@ -1,7 +1,7 @@
 /**
  * Page where users can type in invitee and invitee emails to send the invitation
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PillButton from "src/app/utils/pillButton";
 
 type Invitee = {
@@ -9,12 +9,42 @@ type Invitee = {
   email: string;
 };
 
+const STORAGE_KEY = "viva:invitees";
+
 export default function Invitee() {
   const [invitees, setInvitees] = useState<Invitee[]>([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as {
+          invitees?: Invitee[];
+          name?: string;
+          email?: string;
+        };
+        if (Array.isArray(saved.invitees)) setInvitees(saved.invitees);
+        if (typeof saved.name === "string") setName(saved.name);
+        if (typeof saved.email === "string") setEmail(saved.email);
+      }
+    } catch {}
+    finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ invitees, name, email })
+    );
+  }, [hydrated, invitees, name, email]);
 
   const handleAddInvitee = () => {
     if (!name || !email) return;

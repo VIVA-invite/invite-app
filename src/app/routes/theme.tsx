@@ -1,7 +1,7 @@
 /**
  * User enter the theme of the party (spooky etc.)
  */
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "src/app/components/ui/button"
 import { Card, CardContent } from "src/app/components/ui/card"
 import { Input } from "src/app/components/ui/input"
@@ -14,9 +14,35 @@ const vibeTags = {
   style: ["Cottagecore", "Retro", "Sci-fi", "Fairytale", "Minimalist"]
 }
 
+const STORAGE_KEY = "viva:theme";
+
 export default function Theme() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customTheme, setCustomTheme] = useState("")
+
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as { selectedTags?: string[]; customTheme?: string }
+        if (Array.isArray(saved.selectedTags)) setSelectedTags(saved.selectedTags);
+        if (typeof saved.customTheme === "string") setCustomTheme(saved.customTheme);
+      }
+    } catch {}
+    finally {
+      setHydrated(true);
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ selectedTags, customTheme })
+    )
+  }, [hydrated, selectedTags, customTheme])
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev =>
