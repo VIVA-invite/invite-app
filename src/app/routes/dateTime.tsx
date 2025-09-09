@@ -4,10 +4,23 @@
 import { JapaneseYen } from "lucide-react";
 import { useEffect, useState } from "react";
 import PillButton from "src/app/utils/pillButton";
+import { useInvitation } from "src/app/utils/invitationContext";
 
 const STORAGE_KEY = "viva:dateTime";
 
 export default function DateTime() {
+  const {
+    date, 
+    setDate, 
+    startTime, 
+    setStartTime, 
+    endTime, 
+    setEndTime
+  } = useInvitation();
+  
+  // const [date, setDate] = useInvitation();
+  // const [startTime, setStartTime] = useInvitation();
+  // const [endTime, setEndTime] = useInvitation();
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
