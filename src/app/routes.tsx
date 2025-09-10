@@ -9,8 +9,9 @@ import DateTime from './routes/dateTime';
 import Activity from './routes/activity';
 import PartyType from './routes/partyType';
 import Theme from './routes/theme';
-import Confirmation from './routes/confirmation'
-import Guest from './routes/guest'
+import Confirmation from './routes/confirmation';
+import Guest from './routes/guest';
+import HostLogIn from './routes/hostLogIn';
 import { InvitationProvider } from './utils/invitationContext';
 
 
@@ -33,6 +34,7 @@ const routes = [
       { path: 'theme', element: <Theme /> },
       { path: 'confirmation', element: <Confirmation /> },
       { path: 'guest/:inviteId', element: <Guest /> },
+      { path: 'hostLogIn', element: <HostLogIn /> },
     ],
   },
 ];
