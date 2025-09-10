@@ -9,8 +9,6 @@ type Invitee = {
   email: string;
 };
 
-const STORAGE_KEY = "viva:invitees";
-
 export default function Invitee() {
   const [invitees, setInvitees] = useState<Invitee[]>([]);
   const [name, setName] = useState("");
@@ -19,6 +17,8 @@ export default function Invitee() {
   const [showToast, setShowToast] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  // Local storage
+  const STORAGE_KEY = "viva:invitees";
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);

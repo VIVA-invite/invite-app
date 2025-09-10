@@ -14,8 +14,6 @@ type Activity = {
     time: number; // in minutes
 };
 
-const STORAGE_KEY = "viva:activityState";
-
 const formatTime = (totalMinutes: number) => {
     const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
@@ -35,7 +33,6 @@ export default function Activity() {
   
     const startMinutes = parseTime(startTime);
     const endMinutes = parseTime(endTime);
-    // const totalDuration = endMinutes - startMinutes;
   
     const [activities, setActivities] = useState<Activity[]>([]);
     const [name, setName] = useState("");
@@ -43,6 +40,8 @@ export default function Activity() {
 
     const [hydrated, setHydrated] = useState(false);
 
+    // Local storage
+    const STORAGE_KEY = "viva:activityState";
     useEffect(() => {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);

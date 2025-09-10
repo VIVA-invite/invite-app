@@ -6,8 +6,6 @@ import { useEffect, useState } from "react";
 import PillButton from "src/app/utils/pillButton";
 import { useInvitation } from "src/app/utils/invitationContext";
 
-const STORAGE_KEY = "viva:dateTime";
-
 export default function DateTime() {
   const {
     date, 
@@ -18,14 +16,9 @@ export default function DateTime() {
     setEndTime
   } = useInvitation();
   
-  // const [date, setDate] = useInvitation();
-  // const [startTime, setStartTime] = useInvitation();
-  // const [endTime, setEndTime] = useInvitation();
-  const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  // Local storage
   const [hydrated, setHydrated] = useState(false);
-
+  const STORAGE_KEY = "viva:dateTime";
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -64,7 +57,7 @@ export default function DateTime() {
         <label className="block mb-1 font-medium">When is your event?</label>
         <input
           type="date"
-          value={date}
+          value={date ?? ""}
           onChange={(e) => setDate(e.target.value)}
           className="w-full border rounded-lg px-4 py-2"
         />
@@ -77,7 +70,7 @@ export default function DateTime() {
             <label className="block mb-1 font-medium">Start Time</label>
             <input
               type="time"
-              value={startTime}
+              value={startTime ?? ""}
               onChange={(e) => setStartTime(e.target.value)}
               className="w-full border rounded-lg px-4 py-2"
             />
@@ -87,7 +80,7 @@ export default function DateTime() {
             <label className="block mb-1 font-medium">End Time</label>
             <input
               type="time"
-              value={endTime}
+              value={endTime ?? ""}
               onChange={(e) => setEndTime(e.target.value)}
               className="w-full border rounded-lg px-4 py-2"
             />
