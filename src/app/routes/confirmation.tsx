@@ -47,6 +47,12 @@ const handleConfirm = async () => {
       <PillButton onClick={handleConfirm}>
          Confirm & Generate Link
       </PillButton>
+       <br /> <br />
+        <p className="text-sm text-gray-500">Want to save progress?</p>
+        <br />
+        <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
+          Log in as a Host
+        </PillButton>
     </div>
   );
 }

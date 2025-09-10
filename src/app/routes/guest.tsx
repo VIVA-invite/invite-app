@@ -79,14 +79,6 @@ export default function Guest() {
             <PillButton onClick={() => setBringing(1)}> +1</PillButton>
             </>
           )}
-
-          <br /> <br />
-          <p className="text-sm text-gray-500">Want to save progress?</p>
-          <br />
-          <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
-            Log in as a Host
-          </PillButton>
-
         </>
       ) : (
         <p>Loading invitation...</p>
