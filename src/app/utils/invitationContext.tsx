@@ -13,8 +13,8 @@ type InvitationData = {
   eventType: string[];
   setEventType: (value: string[]) => void;
 
-  theme: string;
-  setTheme: (value: string) => void;
+  theme: string[];
+  setTheme: (value: string[]) => void;
 
   location: string;
   setLocation: (value: string) => void;
@@ -39,7 +39,7 @@ const InvitationContext = createContext<InvitationData | undefined>(undefined);
 
 export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [eventType, setEventType] = useState<string[]>([]);
-  const [theme, setTheme] = useState<string>("");
+  const [theme, setTheme] = useState<string[]>([]);
   const [location, setLocation] = useState<string>("");
   const [date, setDate] = useState<string | null>(null);
   const [startTime, setStartTime] = useState<string | null>(null);
