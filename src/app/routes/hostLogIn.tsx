@@ -10,8 +10,10 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signOut,
   updateProfile,
 } from "firebase/auth";
+import type { User } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import PillButton from "../utils/pillButton";
 import { auth, db } from "../lib/firebase";
@@ -35,14 +37,29 @@ export default function HostLogIn() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [existingUser, setExistingUser] = useState<User | null>(auth.currentUser);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // if already logged in, bounce to redirect
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) navigate(redirect, { replace: true });
+      setExistingUser(u);
+      setCheckingAuth(false);
     });
     return () => unsub();
-  }, [navigate, redirect]);
+  }, []);
+
+  const handleSignOut = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await signOut(auth);
+    } catch (error) {
+      setErr("Failed to sign out. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const callFn = async (fnName: "signIn" | "signUp") => {
     setErr(null);
@@ -110,12 +127,43 @@ export default function HostLogIn() {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <div className="max-w-md mx-auto p-6 space-y-5">
+        <h1 className="text-2xl font-bold">Host Log In</h1>
+        <p className="text-sm text-gray-600">Checking your session…</p>
+      </div>
+    );
+  }
+
+  if (existingUser) {
+    const displayName = existingUser.displayName || existingUser.email?.split("@")[0] || "host";
+    return (
+      <div className="max-w-md mx-auto p-6 space-y-5">
+        <h1 className="text-2xl font-bold">You're already signed in</h1>
+        <p className="text-sm text-gray-600">
+          Signed in as <strong>{displayName}</strong>. Each invitation uses its own username and password—sign out to create a new one, or continue to the invitation you came from.
+        </p>
+
+        {err && <div className="text-sm text-red-600">{err}</div>}
+
+        <div className="flex flex-col gap-3 pt-1">
+          <PillButton type="button" onClick={() => navigate(redirect, { replace: true })} disabled={busy}>
+            Go back to your invitation
+          </PillButton>
+          <PillButton type="button" onClick={handleSignOut} disabled={busy}>
+            {busy ? "Signing out..." : "Sign out to create a new invite"}
+          </PillButton>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-md mx-auto p-6 space-y-5">
       <h1 className="text-2xl font-bold">Host Log In</h1>
       <p className="text-sm text-gray-600">
-        Use your self-defined <strong>username</strong> and <strong>password </strong> 
-        to save and restore invitations across devices.
+        Choose a unique <strong>username</strong> and <strong>password</strong> for this invitation. Keep them handy—use the same pair later to reopen the invite.
       </p>
 
       <form
@@ -128,7 +176,7 @@ export default function HostLogIn() {
           <label className="block text-sm font-medium">Username</label>
           <input
             className="w-full border rounded-lg px-3 py-2"
-            placeholder="your_name"
+            placeholder="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
@@ -144,7 +192,7 @@ export default function HostLogIn() {
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete="new-password"
             disabled={busy}
             required
             minLength={6}
@@ -159,7 +207,7 @@ export default function HostLogIn() {
             onClick={() => callFn("signIn")}
             disabled={busy}
           >
-            {busy ? "Logging in..." : "Log In"}
+            {busy ? "Checking..." : "Log In"}
           </PillButton>
 
           <PillButton
@@ -173,7 +221,7 @@ export default function HostLogIn() {
       </form>
 
       <p className="text-xs text-gray-500">
-        By creating an account, you agree that your invitations will be stored in your Viva account.
+        Tip: use a memorable phrase—each invitation works like a When2Meet event with its own login.
       </p>
     </div>
   );

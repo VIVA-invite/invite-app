@@ -1,7 +1,7 @@
 /**
  * The final guest page where users can copy the invitation link
  */
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -13,6 +13,7 @@ type Guest = {
 }
 export default function Guest() {
   const { inviteId } = useParams();
+  const location = useLocation();
   const [inviteData, setInviteData] = useState<any>(null);
   const [attending, setAttending] = useState<"yes" | "no" | null>(null);
   const [bringing, setBringing] = useState<number>(0);
@@ -29,6 +30,8 @@ export default function Guest() {
   }, [inviteId]);
 
   const currentUrl = window.location.href;
+  const redirectTarget = `${location.pathname}${location.search}`;
+  const loginHref = `/hostLogIn?redirect=${encodeURIComponent(redirectTarget)}`;
 
   {/* <pre className="text-xs bg-gray-50 p-2 rounded">
         {JSON.stringify(inviteData, null, 2)}
@@ -85,9 +88,8 @@ export default function Guest() {
       )}
 
       <div className="fixed top-6 right-6 flex gap-2">
-            <PillButton>Log in</PillButton>
-            
-          </div>
+        <PillButton to={loginHref}>Log in</PillButton>
+      </div>
     </div>
 
     

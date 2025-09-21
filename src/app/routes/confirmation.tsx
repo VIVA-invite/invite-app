@@ -1,39 +1,71 @@
 /**
  * Confirmation page where user creates the invitation
  */
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInvitation } from "../utils/invitationContext"; // context holding event info
-import { db } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 import { addDoc, collection } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import type { User } from "firebase/auth";
 import PillButton from "../utils/pillButton";
 
 export default function Confirmation() {
   const [customMessage, setCustomMessage] = useState("");
   const invitationData = useInvitation();
   const navigate = useNavigate();
+  const [host, setHost] = useState<User | null>(auth.currentUser);
+  const [authReady, setAuthReady] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-const handleConfirm = async () => {
-  try {
-    const cleanData = Object.fromEntries(
-      Object.entries(invitationData).filter(([_, v]) => typeof v !== "function")
-    );
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setHost(user);
+      setAuthReady(true);
+    });
+    return () => unsub();
+  }, []);
 
-    const newInvite = {
-      ...cleanData,
-      customMessage,
-      timestamp: new Date(),
-    };
+  const hostUsername = useMemo(() => {
+    if (!host) return null;
+    if (host.displayName) return host.displayName;
+    if (host.email) return host.email.split("@")[0];
+    return null;
+  }, [host]);
 
-    console.log("Cleaned invite:", newInvite);
+  const handleConfirm = async () => {
+    setErrorMessage(null);
+    if (!host) {
+      setErrorMessage("Create a host username and password before saving. Each invitation uses its own login.");
+      return;
+    }
 
-    const docRef = await addDoc(collection(db, "invites"), newInvite);
-    console.log("Invite saved! ID:", docRef.id);
-    navigate(`/guest/${docRef.id}`);
-  } catch (error) {
-    console.error("Error saving invite:", error);
-  }
-};
+    setSaving(true);
+    try {
+      const cleanData = Object.fromEntries(
+        Object.entries(invitationData).filter(([_, v]) => typeof v !== "function")
+      );
+
+      const newInvite = {
+        ...cleanData,
+        hostUid: host.uid,
+        hostUsername,
+        hostEmail: host.email,
+        customMessage,
+        timestamp: new Date(),
+      };
+
+      const docRef = await addDoc(collection(db, "invites"), newInvite);
+      await signOut(auth).catch(() => undefined);
+      navigate(`/guest/${docRef.id}`);
+    } catch (error) {
+      console.error("Error saving invite:", error);
+      setErrorMessage("We couldn't save this invite. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
     <div className="max-w-md mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-bold">🎉 Review & Confirm</h1>
@@ -44,14 +76,20 @@ const handleConfirm = async () => {
         onChange={(e) => setCustomMessage(e.target.value)}
         className="w-full border rounded-lg px-3 py-2"
       />
-      <PillButton onClick={handleConfirm}>
-         Confirm & Generate Link
+      {errorMessage && <div className="text-sm text-red-600">{errorMessage}</div>}
+
+      <PillButton onClick={handleConfirm} disabled={saving || !authReady}>
+         {saving ? "Saving..." : "Confirm & Generate Link"}
       </PillButton>
        <br /> <br />
-        <p className="text-sm text-gray-500">Want to save progress?</p>
+        <p className="text-sm text-gray-500">
+          {host
+            ? `Signed in as ${hostUsername ?? "your host account"}. Finishing will sign you out, just like When2Meet.`
+            : "Need a host login? Create a new username and password for this invite."}
+        </p>
         <br />
         <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
-          Log in as a Host
+          {host ? "Switch host login" : "Log in as a Host"}
         </PillButton>
     </div>
   );
