@@ -7,6 +7,7 @@ import PillButton from "../utils/pillButton";
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import React from "react";
+import { useInvitation } from "../utils/invitationContext"; // context holding event info
 
 type Activity = {
     id: number;
@@ -28,8 +29,9 @@ const parseTime = (str: string) => {
 };
 
 export default function Activity() {
+    const invitationData = useInvitation();
     const location = useLocation();
-    const { startTime = "08:00", endTime = "18:00" } = location.state || {};
+    const { startTime = invitationData.startTime, endTime = invitationData.endTime } = location.state || {};
   
     const startMinutes = parseTime(startTime);
     const endMinutes = parseTime(endTime);

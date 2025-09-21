@@ -41,9 +41,14 @@ export default function Guest() {
       <h1 className="text-2xl font-bold">You're Invited!</h1>
       {inviteData ? (
         <>
-          <p><strong>Type:</strong> {inviteData.eventType?.join(", ")}</p>
-          {inviteData.theme ? (
-            <p><strong>Theme:</strong> {inviteData.theme?.join(", ")}</p>
+          {/* <p><strong>Type:</strong> {inviteData.eventType?.join(", ")}</p> */}
+          {inviteData.eventType.length !== 0 ? (
+            <p><strong>Type:</strong> {inviteData.eventType.join(", ")}</p>
+          ) : (
+            <p><strong>Type:</strong> No type specified</p>
+          )}
+          {inviteData.theme.length !== 0 ? (
+            <p><strong>Theme:</strong> {inviteData.theme.join(", ")}</p>
           ) : (
             <p><strong>Theme:</strong> No theme specified</p>
           )}
