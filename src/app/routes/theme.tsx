@@ -108,13 +108,30 @@ export default function Theme() {
           {selectedTags.length === 0 && !customTheme ? (
             <p>No vibes selected yet! Pick a few tags or write your own above ✨</p>
           ) : (
-            <div>
-              <p><strong>Tags:</strong> {selectedTags.join(", ")}</p>
-              {customTheme && <p><strong>Description:</strong> {customTheme}</p>}
+            <div className="space-y-2">
+              {selectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedTags.map(tag => (
+                    <PillButton
+                      key={tag}
+                      isSelected
+                      onClick={() => toggleTag(tag)}  // clicking removes it
+                    >
+                      {tag}
+                    </PillButton>
+                  ))}
+                </div>
+              )}
+              {customTheme && (
+                <p>
+                  <strong>Description:</strong> {customTheme}
+                </p>
+              )}
             </div>
           )}
         </div>
       </div>
+
 
       <div className="fixed bottom-6 right-6 flex gap-2">
         <PillButton to="/">Home</PillButton>
