@@ -192,6 +192,12 @@ export default function Activity() {
                             },
                             onMouseEnter: () => setHovered(true),
                             onMouseLeave: () => setHovered(false),
+                            onClick: () => {
+                                // remove this activity
+                                setActivities((prev) =>
+                                    prev.filter((a) => a.id !== activity.id)
+                                );
+                            },
                             children: (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                   <div style = {{fontSize: '14px', alignItems: 'center', transform: 'translateY(40%)'}}>{activity.name}</div>
