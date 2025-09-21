@@ -91,15 +91,21 @@ export default function PartyType () {
             </button>
         </form>
 
-        {eventType && (
-            <div className="mt-4">
-            <h3 className="text-lg font-medium mb-2">Selected Party Type:</h3>
-              <div className="flex gap-1">
-                {eventType.map((type) =>
-                  <PillButton>{type}</PillButton>
-                )}
-              </div>
+        {eventType && eventType.length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-lg font-medium mb-2">Your Theme Vibe Preview</h3>
+            <div className="flex flex-wrap gap-2">
+              {eventType.map((type) => (
+                <PillButton
+                  key={type}
+                  isSelected={true}
+                  onClick={() => handleSelect(type)}
+                >
+                  {type}
+                </PillButton>
+              ))}
             </div>
+          </div>
         )}
         
         </div>
