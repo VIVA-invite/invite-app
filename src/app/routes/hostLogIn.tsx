@@ -5,9 +5,22 @@
 // src/routes/hostLogIn.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getAuth, onAuthStateChanged, signInWithCustomToken } from "firebase/auth";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { FirebaseError } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import PillButton from "../utils/pillButton";
+import { auth, db } from "../lib/firebase";
+
+const USERNAME_PATTERN = /^[a-z0-9._-]{3,30}$/;
+const HOST_EMAIL_DOMAIN = "hosts.viva-invite.app";
+
+const normalizeUsername = (value: string) => value.trim().toLowerCase();
+const usernameToEmail = (username: string) => `${username}@${HOST_EMAIL_DOMAIN}`;
 
 export default function HostLogIn() {
   const navigate = useNavigate();
@@ -17,9 +30,6 @@ export default function HostLogIn() {
     const qs = new URLSearchParams(location.search);
     return qs.get("redirect") || "/confirm";
   }, [location.search]);
-
-  const auth = useMemo(() => getAuth(), []);
-  const functions = useMemo(() => getFunctions(), []);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -32,33 +42,69 @@ export default function HostLogIn() {
       if (u) navigate(redirect, { replace: true });
     });
     return () => unsub();
-  }, [auth, navigate, redirect]);
+  }, [navigate, redirect]);
 
   const callFn = async (fnName: "signIn" | "signUp") => {
     setErr(null);
-    if (!username || !password) {
+    const normalizedUsername = normalizeUsername(username);
+    if (!normalizedUsername || !password) {
       setErr("Please enter both username and password.");
       return;
     }
+    if (!USERNAME_PATTERN.test(normalizedUsername)) {
+      setErr("Usernames must be 3-30 characters using letters, numbers, dots, underscores, or dashes.");
+      return;
+    }
     setBusy(true);
+    const email = usernameToEmail(normalizedUsername);
     try {
-      const fn = httpsCallable(functions, fnName);
-      const res = await fn({ username: username.trim(), password });
-      const { token } = (res.data as any) || {};
-      if (!token) throw new Error("No token returned from server.");
-      await signInWithCustomToken(auth, token);
-      navigate(redirect, { replace: true });
-    } catch (e: any) {
-      const msg = e?.message || "";
-      if (msg.includes("not-found")) {
-        setErr("Username doesn't exist, please create an account.");
-      } else if (msg.includes("permission-denied")) {
-        setErr("Username or password is incorrect.");
-      } else if (msg.includes("already-exists")) {
-        setErr("That username is already taken. Try a different one.");
+      if (fnName === "signIn") {
+        await signInWithEmailAndPassword(auth, email, password);
       } else {
-        setErr("Unexpected error. Please try again.");
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = credential.user;
+        if (user) {
+          await Promise.all([
+            updateProfile(user, { displayName: normalizedUsername }).catch(() => undefined),
+            setDoc(
+              doc(db, "hosts", user.uid),
+              {
+                username: normalizedUsername,
+                email,
+                createdAt: serverTimestamp(),
+              },
+              { merge: true }
+            ),
+          ]);
+        }
       }
+      navigate(redirect, { replace: true });
+    } catch (error) {
+      let message = "Unexpected error. Please try again.";
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case "auth/user-not-found":
+            message = "Username doesn't exist, please create an account.";
+            break;
+          case "auth/wrong-password":
+          case "auth/invalid-credential":
+            message = "Username or password is incorrect.";
+            break;
+          case "auth/email-already-in-use":
+            message = "That username is already taken. Try a different one.";
+            break;
+          case "auth/weak-password":
+            message = "Password must be at least 6 characters long.";
+            break;
+          case "auth/too-many-requests":
+            message = "Too many attempts. Please wait and try again.";
+            break;
+          case "auth/operation-not-allowed":
+            message = "Email/password sign-in is disabled for this project. Enable it in Firebase Authentication settings.";
+            break;
+        }
+      }
+      setErr(message);
     } finally {
       setBusy(false);
     }
@@ -68,7 +114,7 @@ export default function HostLogIn() {
     <div className="max-w-md mx-auto p-6 space-y-5">
       <h1 className="text-2xl font-bold">Host Log In</h1>
       <p className="text-sm text-gray-600">
-        Use your self-defined <strong>username</strong> and <strong>password</strong> 
+        Use your self-defined <strong>username</strong> and <strong>password </strong> 
         to save and restore invitations across devices.
       </p>
 
