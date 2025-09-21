@@ -6,6 +6,7 @@ import { Button } from "src/app/components/ui/button"
 import { Card, CardContent } from "src/app/components/ui/card"
 import { Input } from "src/app/components/ui/input"
 import PillButton from "src/app/utils/pillButton"
+import { useInvitation } from "../utils/invitationContext"; // context holding event info
 
 const vibeTags = {
   colors: ["Pastel", "Neon", "Monochrome", "Gold & Glitter"],
@@ -17,6 +18,7 @@ const vibeTags = {
 const STORAGE_KEY = "viva:theme";
 
 export default function Theme() {
+  const { theme, setTheme } = useInvitation();
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customTheme, setCustomTheme] = useState("")
 
@@ -42,6 +44,7 @@ export default function Theme() {
       STORAGE_KEY,
       JSON.stringify({ selectedTags, customTheme })
     )
+    setTheme([...selectedTags, ...(customTheme ? [customTheme] : [])])
   }, [hydrated, selectedTags, customTheme])
 
   const toggleTag = (tag: string) => {
