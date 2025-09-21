@@ -2,7 +2,7 @@
  * Confirmation page where user creates the invitation
  */
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useInvitation } from "../utils/invitationContext"; // context holding event info
 import { auth, db } from "../lib/firebase";
 import { addDoc, collection } from "firebase/firestore";
@@ -14,6 +14,7 @@ export default function Confirmation() {
   const [customMessage, setCustomMessage] = useState("");
   const invitationData = useInvitation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [host, setHost] = useState<User | null>(auth.currentUser);
   const [authReady, setAuthReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -84,7 +85,7 @@ export default function Confirmation() {
        <br /> <br />
         <p className="text-sm text-gray-500">
           {host
-            ? `Signed in as ${hostUsername ?? "your host account"}. Finishing will sign you out, just like When2Meet.`
+            ? `Signed in as ${hostUsername ?? "your host account"}. Finishing will sign you out.`
             : "Need a host login? Create a new username and password for this invite."}
         </p>
         <br />

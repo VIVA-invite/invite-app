@@ -30,7 +30,7 @@ export default function Guest() {
   }, [inviteId]);
 
   const currentUrl = window.location.href;
-  const redirectTarget = `${location.pathname}${location.search}`;
+  const redirectTarget = inviteId ? `/host/events/${inviteId}` : "/host/events";
   const loginHref = `/hostLogIn?redirect=${encodeURIComponent(redirectTarget)}`;
 
   {/* <pre className="text-xs bg-gray-50 p-2 rounded">
