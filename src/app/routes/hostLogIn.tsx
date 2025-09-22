@@ -208,6 +208,7 @@ export default function HostLogIn() {
   if (existingUser) {
     const displayName = existingUser.displayName || existingUser.email?.split("@")[0] || "host";
     const viewingSpecificInvite = Boolean(inviteId);
+    const goBackTarget = viewingSpecificInvite && inviteId ? `/host/events/${inviteId}` : redirect;
     return (
       <div className="max-w-md mx-auto p-6 space-y-5">
         <h1 className="text-2xl font-bold">You're already signed in</h1>
@@ -222,8 +223,8 @@ export default function HostLogIn() {
         {err && <div className="text-sm text-red-600">{err}</div>}
 
         <div className="flex flex-col gap-3 pt-1">
-          <PillButton type="button" onClick={() => navigate(redirect, { replace: true })} disabled={busy}>
-            {viewingSpecificInvite ? "Go back" : "Return to your invite"}
+          <PillButton type="button" onClick={() => navigate(goBackTarget, { replace: true })} disabled={busy}>
+            Return to your invite
           </PillButton>
           <PillButton type="button" onClick={handleSignOut} disabled={busy}>
             {busy ? "Signing out..." : "Sign out to create a new invite"}

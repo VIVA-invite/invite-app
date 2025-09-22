@@ -41,7 +41,7 @@ export default function Guest() {
   
 
     <div className="max-w-md mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold">You're Invited!</h1>
+      <h1 className="text-2xl font-bold">{inviteData?.eventName || "You're Invited!"}</h1>
       {inviteData ? (
         <>
           {/* <p><strong>Type:</strong> {inviteData.eventType?.join(", ")}</p> */}
@@ -57,6 +57,20 @@ export default function Guest() {
           )}
           <p><strong>Time:</strong> {" "}{inviteData.date}, {inviteData.startTime} - {inviteData.endTime}</p>
           <p><strong>Location:</strong> {inviteData.location}</p>
+          {inviteData.location && (
+            <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
+              <iframe
+                title="Event location map"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(inviteData.location)}&z=15&output=embed`}
+                width="100%"
+                height="200"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="border-0"
+                allowFullScreen
+              />
+            </div>
+          )}
           {inviteData.customMessage && (
             <p className="italic">💬 {inviteData.customMessage}</p>
           )}

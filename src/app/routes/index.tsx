@@ -4,6 +4,7 @@
 import PillButton from "src/app/utils/pillButton";
 
 const sections = [
+  { label: "Event Name", path: "/eventName" },
   { label: "Type", path: "/partyType" },
   { label: "Theme", path: "/theme" },
   { label: "Date & Time", path: "/dateTime" },

@@ -37,6 +37,11 @@ export default function Confirmation() {
 
   const handleConfirm = async () => {
     setErrorMessage(null);
+    const trimmedEventName = invitationData.eventName?.trim() ?? "";
+    if (!trimmedEventName) {
+      setErrorMessage("Give your event a name before saving.");
+      return;
+    }
     if (!host) {
       setErrorMessage("Create a host username and password before saving. Each invitation uses its own login.");
       return;
@@ -50,6 +55,7 @@ export default function Confirmation() {
 
       const newInvite = {
         ...cleanData,
+        eventName: trimmedEventName,
         hostUid: host.uid,
         hostUsername,
         hostEmail: host.email,
@@ -88,10 +94,15 @@ export default function Confirmation() {
             ? `Signed in as ${hostUsername ?? "your host account"}. Finishing will sign you out.`
             : "Need a host login? Create a new username and password for this invite."}
         </p>
-        <br />
-        <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
-          {host ? "Switch host login" : "Log in as a Host"}
-        </PillButton>
+        <div className="flex gap-2">
+          <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
+            {host ? "Switch host login" : "Log in as a Host"}
+          </PillButton>
+          
+          <PillButton to="/">
+              Home
+          </PillButton>
+        </div>
     </div>
   );
 }
