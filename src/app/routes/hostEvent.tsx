@@ -1,11 +1,11 @@
 /**
- * Host event dashboard – displays a saved invitation using the original layout.
+ * Host event dashboard – displays a saved invitation and lets hosts preview/edit key fields.
  */
-import { useEffect, useMemo, useState, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Calendar, MapPin, Users, ListChecks, Plus, Settings } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { Calendar, MapPin, Users, ListChecks, Plus, Eye, Pencil } from "lucide-react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { doc, getDoc, type DocumentData } from "firebase/firestore";
+import { doc, getDoc, updateDoc, type DocumentData } from "firebase/firestore";
 import PillButton from "src/app/utils/pillButton";
 import { auth, db } from "../lib/firebase";
 
@@ -18,48 +18,18 @@ interface InviteDoc extends DocumentData {
   date?: string | null;
   startTime?: string | null;
   endTime?: string | null;
+  eventName?: string;
   invitees?: string[];
   activities?: Array<{ id?: string; name?: string; time?: string }>;
   customMessage?: string;
 }
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
-}
-
-function Card({ children, className = "", ...props }: CardProps): ReactElement {
-  return (
-    <div className={`border rounded-xl bg-white shadow ${className}`} {...props}>
-      {children}
-    </div>
-  );
-}
-
-function CardHeader({ children, className = "" }: { children: ReactNode; className?: string }): ReactElement {
-  return <div className={`p-4 border-b ${className}`}>{children}</div>;
-}
-
-function CardTitle({ children, className = "" }: { children: ReactNode; className?: string }): ReactElement {
-  return <h2 className={`font-semibold ${className}`}>{children}</h2>;
-}
-
-function CardContent({ children, className = "" }: { children: ReactNode; className?: string }): ReactElement {
-  return <div className={`p-4 ${className}`}>{children}</div>;
-}
-
-function Stat({ label, value }: { label: string; value: string | number }): ReactElement {
-  return (
-    <div className="flex flex-col">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-2xl font-semibold">{value}</span>
-    </div>
-  );
-}
-
-const QUICK_ACTIONS = [
-  { id: "invitees", label: "Invite more guests", href: "/invitee" },
-  { id: "timeline", label: "Edit timeline", href: "/activity" },
-  { id: "date", label: "Update date/time", href: "/dateTime" },
+const QUICK_LINKS = [
+  { id: "event-name", label: "Edit event name", to: "/eventName" },
+  { id: "date-time", label: "Edit date & time", to: "/dateTime" },
+  { id: "location", label: "Edit location", to: "/location" },
+  { id: "invitees", label: "Manage invitees", to: "/invitee" },
+  { id: "activities", label: "Edit activities", to: "/activity" },
 ];
 
 export default function HostEvent(): ReactElement {
@@ -71,6 +41,11 @@ export default function HostEvent(): ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [invite, setInvite] = useState<InviteDoc | null>(null);
+  const [editingField, setEditingField] = useState<'none' | 'name' | 'location' | 'message'>('none');
+  const [savingField, setSavingField] = useState<'name' | 'location' | 'message' | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [draftLocation, setDraftLocation] = useState("");
+  const [draftMessage, setDraftMessage] = useState("");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -100,7 +75,13 @@ export default function HostEvent(): ReactElement {
         if (!snap.exists()) {
           throw new Error("Invite not found.");
         }
-        if (!cancelled) setInvite(snap.data() as InviteDoc);
+        if (!cancelled) {
+          const data = snap.data() as InviteDoc;
+          setInvite(data);
+          setDraftName(data.eventName ?? "");
+          setDraftLocation(data.location ?? "");
+          setDraftMessage(typeof data.customMessage === "string" ? data.customMessage : "");
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) setError((err as { message?: string }).message ?? "Failed to load invite.");
@@ -122,9 +103,10 @@ export default function HostEvent(): ReactElement {
 
   const eventName = useMemo(() => {
     if (!invite) return "Your Event";
-    if (Array.isArray(invite.theme) && invite.theme.length > 0) return invite.theme.join(" • ");
-    if (typeof invite.theme === "string" && invite.theme.trim().length > 0) return invite.theme.trim();
-    if (Array.isArray(invite.eventType) && invite.eventType.length > 0) return invite.eventType.join(", ");
+    if (typeof invite.eventName === "string" && invite.eventName.trim()) return invite.eventName.trim();
+    if (Array.isArray(invite.theme) && invite.theme.length) return invite.theme.join(" • ");
+    if (typeof invite.theme === "string" && invite.theme.trim()) return invite.theme.trim();
+    if (Array.isArray(invite.eventType) && invite.eventType.length) return invite.eventType.join(", ");
     return "Your Event";
   }, [invite]);
 
@@ -138,15 +120,26 @@ export default function HostEvent(): ReactElement {
   }, [invite]);
 
   const locationLabel = invite?.location?.trim() || "Location to be decided";
-
   const invitees = useMemo(() => (Array.isArray(invite?.invitees) ? invite!.invitees! : []), [invite]);
   const activities = useMemo(
     () => (Array.isArray(invite?.activities) ? invite!.activities!.slice().sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")) : []),
     [invite]
   );
 
+  const eventTypeLabel = useMemo(() => {
+    if (!invite) return "Not specified";
+    if (Array.isArray(invite.eventType) && invite.eventType.length > 0) return invite.eventType.join(", ");
+    return "Not specified";
+  }, [invite]);
+
+  const themeLabel = useMemo(() => {
+    if (!invite) return "No theme selected";
+    if (Array.isArray(invite.theme) && invite.theme.length > 0) return invite.theme.join(" • ");
+    if (typeof invite.theme === "string" && invite.theme.trim().length > 0) return invite.theme.trim();
+    return "No theme selected";
+  }, [invite]);
+
   const rsvpSummary = useMemo(() => {
-    // RSVP tracking not implemented yet, so everyone remains in "No response" for now.
     const total = invitees.length;
     return { going: 0, maybe: 0, declined: 0, noResponse: total };
   }, [invitees.length]);
@@ -157,10 +150,53 @@ export default function HostEvent(): ReactElement {
     return "host";
   }, [host]);
 
+  const inviteUrl = useMemo(() => {
+    if (!inviteId) return null;
+    if (typeof window === "undefined") return null;
+    return `${window.location.origin}/guest/${inviteId}`;
+  }, [inviteId]);
+
+  const guestPreviewPath = inviteId ? `/guest/${inviteId}` : null;
+
+  const mapSrc = useMemo(() => {
+    if (!invite?.location) return null;
+    const query = encodeURIComponent(invite.location);
+    return `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
+  }, [invite?.location]);
+
+  const updateInvite = async (updates: Partial<InviteDoc>, field: 'name' | 'location' | 'message') => {
+    if (!inviteId) return;
+    setSavingField(field);
+    try {
+      await updateDoc(doc(db, "invites", inviteId), updates);
+      setInvite((prev) => (prev ? { ...prev, ...updates } : prev));
+      setEditingField('none');
+    } catch (err) {
+      console.error("Failed to update invite", err);
+    } finally {
+      setSavingField(null);
+    }
+  };
+
   const handleSignOutForMismatch = async () => {
     await signOut(auth).catch(() => undefined);
     const redirectTarget = inviteId ? `/host/events/${inviteId}` : "/host/events";
     navigate(`/hostLogIn?redirect=${encodeURIComponent(redirectTarget)}`);
+  };
+
+  const handleCreateNewEvent = async () => {
+    if (inviteUrl && typeof navigator !== "undefined") {
+      const clipboard = navigator.clipboard;
+      if (clipboard?.writeText) {
+        try {
+          await clipboard.writeText(inviteUrl);
+        } catch (error) {
+          console.error("Unable to copy invite link", error);
+        }
+      }
+    }
+    await signOut(auth).catch(() => undefined);
+    navigate("/", { replace: true });
   };
 
   if (!authReady || loading) {
@@ -198,87 +234,222 @@ export default function HostEvent(): ReactElement {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{eventName}</h1>
-          <p className="text-gray-500 flex items-center gap-4 mt-2">
-            <span className="inline-flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              {dateLabel} • {timeLabel}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              {locationLabel}
-            </span>
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Signed in as {hostDisplayName}</p>
-        </div>
-        <div className="flex gap-2">
-          <PillButton className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
-          </PillButton>
-          <PillButton className="flex items-center gap-2" to="/">
-            <Plus className="h-4 w-4" />
-            New Event
-          </PillButton>
-        </div>
-      </div>
-
-      {/* Top grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Users className="h-4 w-4" />RSVP Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-between gap-4">
-            <Stat label="Going" value={rsvpSummary.going} />
-            <Stat label="Maybe" value={rsvpSummary.maybe} />
-            <Stat label="Declined" value={rsvpSummary.declined} />
-            <Stat label="No response" value={rsvpSummary.noResponse} />
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <ListChecks className="h-4 w-4" />Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {QUICK_ACTIONS.map((action) => (
-              <a key={action.id} href={action.href} className="text-sm text-blue-600 hover:underline">
-                {action.label}
-              </a>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <MapPin className="h-4 w-4" />Location
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="w-full rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
-              {locationLabel}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-4">
+        <div className="flex-1 space-y-3">
+          {editingField === 'name' ? (
+            <form
+              className="flex flex-col gap-3 max-w-xl"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const value = draftName.trim();
+                if (!value) return;
+                updateInvite({ eventName: value }, 'name');
+              }}
+            >
+              <label className="text-xs uppercase tracking-wide text-gray-500">Event title</label>
+              <input
+                className="border rounded-lg px-4 py-2 text-2xl font-semibold"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                maxLength={100}
+                required
+              />
+              <div className="flex gap-2">
+                <PillButton type="submit" disabled={savingField === 'name'}>
+                  {savingField === 'name' ? 'Saving…' : 'Save title'}
+                </PillButton>
+                <PillButton
+                  type="button"
+                  onClick={() => {
+                    setEditingField('none');
+                    setDraftName(invite?.eventName ?? '');
+                  }}
+                >
+                  Cancel
+                </PillButton>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">{eventName}</h1>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                  onClick={() => setEditingField('name')}
+                >
+                  <Pencil className="h-4 w-4" /> Edit title
+                </button>
+              </div>
+              <p className="text-gray-500 flex flex-wrap items-center gap-4">
+                <span className="inline-flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {dateLabel} • {timeLabel}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {locationLabel}
+                </span>
+              </p>
             </div>
-            <div className="text-xs text-gray-500 mt-2">Map preview coming soon.</div>
-          </CardContent>
-        </Card>
+          )}
+          <p className="text-xs text-gray-400">Signed in as {hostDisplayName}</p>
+        </div>
+        <div className="flex flex-wrap gap-2 justify-end">
+          {guestPreviewPath && (
+            <PillButton className="flex items-center gap-2" to={guestPreviewPath}>
+              <Eye className="h-4 w-4" /> Preview Invite
+            </PillButton>
+          )}
+          <PillButton className="flex items-center gap-2" type="button" onClick={handleCreateNewEvent}>
+            <Plus className="h-4 w-4" /> Create New Event
+          </PillButton>
+        </div>
       </div>
 
-      {/* Bottom grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="rounded-2xl lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Timeline</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="rounded-2xl border bg-white shadow">
+          <div className="p-4 border-b font-semibold inline-flex items-center gap-2">
+            <Users className="h-4 w-4" /> Event Snapshot
+          </div>
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div>
+              <h3 className="text-xs uppercase tracking-wide text-gray-500">Event type</h3>
+              <p className="mt-1 font-medium text-gray-800">{eventTypeLabel}</p>
+            </div>
+            <div>
+              <h3 className="text-xs uppercase tracking-wide text-gray-500">Theme</h3>
+              <p className="mt-1 font-medium text-gray-800">{themeLabel}</p>
+            </div>
+            <div>
+              <h3 className="text-xs uppercase tracking-wide text-gray-500">Guests added</h3>
+              <p className="mt-1 font-medium text-gray-800">{invitees.length}</p>
+            </div>
+            <div>
+              <h3 className="text-xs uppercase tracking-wide text-gray-500">Date & time</h3>
+              <p className="mt-1 font-medium text-gray-800">{dateLabel} • {timeLabel}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-white shadow">
+          <div className="p-4 border-b font-semibold inline-flex items-center gap-2 text-gray-800">
+            <Users className="h-4 w-4" /> RSVP Overview
+          </div>
+          <div className="p-4 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-xl bg-gray-50 px-4 py-3 border border-gray-200">
+              <p className="text-xs uppercase tracking-wide text-gray-600">Going</p>
+              <p className="text-2xl font-semibold text-gray-900">{rsvpSummary.going}</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 px-4 py-3 border border-gray-200">
+              <p className="text-xs uppercase tracking-wide text-gray-600">Maybe</p>
+              <p className="text-2xl font-semibold text-gray-900">{rsvpSummary.maybe}</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 px-4 py-3 border border-gray-200">
+              <p className="text-xs uppercase tracking-wide text-gray-600">Declined</p>
+              <p className="text-2xl font-semibold text-gray-900">{rsvpSummary.declined}</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 px-4 py-3 border border-gray-200">
+              <p className="text-xs uppercase tracking-wide text-gray-600">No response</p>
+              <p className="text-2xl font-semibold text-gray-900">{rsvpSummary.noResponse}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-white shadow">
+          <div className="p-4 border-b flex items-center justify-between">
+            <span className="font-semibold inline-flex items-center gap-2">
+              <MapPin className="h-4 w-4" /> Location & Map
+            </span>
+            {editingField !== 'location' && (
+              <button
+                type="button"
+                className="text-xs text-blue-600 inline-flex items-center gap-1"
+                onClick={() => setEditingField('location')}
+              >
+                <Pencil className="h-3 w-3" /> Edit location
+              </button>
+            )}
+          </div>
+          <div className="p-4 space-y-3 text-sm">
+            {editingField === 'location' ? (
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const value = draftLocation.trim();
+                  if (!value) return;
+                  updateInvite({ location: value }, 'location');
+                }}
+              >
+                <label className="text-xs uppercase tracking-wide text-gray-500">Location</label>
+                <input
+                  className="w-full border rounded-lg px-3 py-2"
+                  value={draftLocation}
+                  onChange={(e) => setDraftLocation(e.target.value)}
+                  maxLength={200}
+                  required
+                />
+                <div className="flex justify-end gap-2">
+                  <PillButton type="button" onClick={() => { setEditingField('none'); setDraftLocation(invite?.location ?? ""); }}>
+                    Cancel
+                  </PillButton>
+                  <PillButton type="submit" disabled={savingField === 'location'}>
+                    {savingField === 'location' ? 'Saving…' : 'Save'}
+                  </PillButton>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700">
+                  {locationLabel}
+                </div>
+                {mapSrc ? (
+                  <div className="w-full overflow-hidden rounded-xl border border-gray-200">
+                    <iframe
+                      title="Event location map"
+                      src={mapSrc}
+                      width="100%"
+                      height="200"
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="border-0"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full rounded-xl bg-gray-100 px-4 py-8 text-center text-xs text-gray-500">
+                    Add a location to preview it on the map.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="rounded-2xl border bg-white shadow">
+          <div className="p-4 border-b font-semibold inline-flex items-center gap-2">
+            <ListChecks className="h-4 w-4" /> Quick Links
+          </div>
+          <div className="p-4 space-y-2 text-sm">
+            {QUICK_LINKS.map((link) => (
+              <Link
+                key={link.id}
+                to={link.to}
+                className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-gray-50 text-blue-600"
+              >
+                <span>{link.label}</span>
+                <span className="text-xs">→</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-white shadow lg:col-span-2">
+          <div className="p-4 border-b font-semibold">Timeline</div>
+          <div className="p-4 space-y-3">
             {activities.length > 0 ? (
               activities.map((activity) => (
                 <div key={activity.id ?? activity.name} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
@@ -291,38 +462,74 @@ export default function HostEvent(): ReactElement {
                 No activities scheduled yet. Add them on the Activities page.
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Upcoming Activities</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {activities.length > 0 ? (
-              activities.slice(0, 5).map((activity) => (
-                <div key={`upcoming-${activity.id ?? activity.name}`} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">{activity.time || "TBD"}</span>
-                  <span className="font-medium">{activity.name || "Untitled activity"}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500">Your plan will appear here once you add activities.</p>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
-      {invite?.customMessage && (
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Host Message</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-700">{invite.customMessage}</p>
-          </CardContent>
-        </Card>
-      )}
+      <div className="rounded-2xl border bg-white shadow">
+        <div className="p-4 border-b font-semibold">Guest List</div>
+        <div className="p-4 space-y-3 text-sm">
+          {invitees.length > 0 ? (
+            <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
+              {invitees.map((guest, idx) => (
+                <div key={`${guest}-${idx}`} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                  <span>{guest}</span>
+                  <span className="text-gray-400 text-xs">No response yet</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500">No guests added yet. Add them on the Invitees page.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-white shadow">
+        <div className="p-4 border-b flex items-center justify-between">
+          <span className="font-semibold inline-flex items-center gap-2">
+            <Pencil className="h-4 w-4" /> Host Message
+          </span>
+          {editingField !== 'message' && (
+            <button
+              type="button"
+              className="text-xs text-blue-600 inline-flex items-center gap-1"
+              onClick={() => setEditingField('message')}
+            >
+              <Pencil className="h-3 w-3" /> Edit
+            </button>
+          )}
+        </div>
+        <div className="p-4 space-y-3 text-sm">
+          {editingField === 'message' ? (
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                updateInvite({ customMessage: draftMessage }, 'message');
+              }}
+            >
+              <textarea
+                className="w-full border rounded-lg px-3 py-2"
+                rows={4}
+                value={draftMessage}
+                onChange={(e) => setDraftMessage(e.target.value)}
+              />
+              <div className="flex justify-end gap-2">
+                <PillButton type="button" onClick={() => { setEditingField('none'); setDraftMessage(typeof invite?.customMessage === 'string' ? invite!.customMessage! : ''); }}>
+                  Cancel
+                </PillButton>
+                <PillButton type="submit" disabled={savingField === 'message'}>
+                  {savingField === 'message' ? 'Saving…' : 'Save'}
+                </PillButton>
+              </div>
+            </form>
+          ) : (
+            <p className="text-gray-700 whitespace-pre-line">
+              {invite?.customMessage || 'Add a custom note for your guests.'}
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
