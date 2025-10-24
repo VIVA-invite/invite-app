@@ -23,18 +23,32 @@ const formatTime = (totalMinutes: number) => {
     return `${displayHour}:${m.toString().padStart(2, "0")} ${suffix}`;
 };
 
-const parseTime = (str: string) => {
-    const [h, m] = str.split(":").map(Number);
+const parseTime = (str: string | null | undefined, fallbackMinutes = 9 * 60) => {
+    if (!str) return fallbackMinutes;
+    const parts = str.split(":");
+    if (parts.length < 2) return fallbackMinutes;
+    const [h, m] = parts.map((v) => Number(v));
+    if (Number.isNaN(h) || Number.isNaN(m)) return fallbackMinutes;
     return h * 60 + m;
 };
+
+const DEFAULT_START = "09:00";
+const DEFAULT_END = "17:00";
 
 export default function Activity() {
     const invitationData = useInvitation();
     const location = useLocation();
     const { startTime = invitationData.startTime, endTime = invitationData.endTime } = location.state || {};
-  
-    const startMinutes = parseTime(startTime);
-    const endMinutes = parseTime(endTime);
+
+    const resolvedStart = startTime ?? DEFAULT_START;
+    const resolvedEnd = endTime ?? DEFAULT_END;
+
+    let startMinutes = parseTime(resolvedStart, parseTime(DEFAULT_START));
+    let endMinutes = parseTime(resolvedEnd, parseTime(DEFAULT_END));
+
+    if (endMinutes <= startMinutes) {
+        endMinutes = startMinutes + 60; // ensure at least one hour window
+    }
   
     const [activities, setActivities] = useState<Activity[]>([]);
     const [name, setName] = useState("");
@@ -69,8 +83,8 @@ export default function Activity() {
                 time?: string;
             };
 
-            const sM = parseTime(saved.startTime ?? startTime);
-            const eM = parseTime(saved.endTime ?? endTime);
+            const sM = parseTime(saved.startTime ?? resolvedStart, startMinutes);
+            const eM = parseTime(saved.endTime ?? resolvedEnd, endMinutes);
 
             const clamp = (v: number) => Math.min(Math.max(v, startMinutes), endMinutes);
 
@@ -88,14 +102,14 @@ export default function Activity() {
     useEffect(() => {
         if (!hydrated) return;
         const payload = JSON.stringify({
-            startTime,
-            endTime,
+            startTime: resolvedStart,
+            endTime: resolvedEnd,
             activities,
             name,
             time,
         });
         localStorage.setItem(STORAGE_KEY, payload);
-    }, [startTime, endTime, activities, name, time]);
+    }, [resolvedStart, resolvedEnd, activities, name, time, hydrated]);
 
     const totalDuration = endMinutes - startMinutes;
     const stepMinutes = 5; // snap to 5 minute increments

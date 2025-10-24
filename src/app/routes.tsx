@@ -12,6 +12,8 @@ import Theme from './routes/theme';
 import Confirmation from './routes/confirmation';
 import Guest from './routes/guest';
 import HostLogIn from './routes/hostLogIn';
+import HostEvent from './routes/hostEvent';
+import EventName from './routes/eventName';
 import { InvitationProvider } from './utils/invitationContext';
 
 
@@ -26,6 +28,7 @@ const routes = [
     ),
     children: [
       { index: true, element: <Index /> },
+      { path: 'eventName', element: <EventName /> },
       { path: 'invitee', element: <Invitee /> },
       { path: 'location', element: <Location /> },
       { path: 'dateTime', element: <DateTime /> },
@@ -35,6 +38,7 @@ const routes = [
       { path: 'confirmation', element: <Confirmation /> },
       { path: 'guest/:inviteId', element: <Guest /> },
       { path: 'hostLogIn', element: <HostLogIn /> },
+      { path: 'host/events/:inviteId', element: <HostEvent /> },
     ],
   },
 ];

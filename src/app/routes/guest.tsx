@@ -1,7 +1,7 @@
 /**
  * The final guest page where users can copy the invitation link
  */
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -13,6 +13,7 @@ type Guest = {
 }
 export default function Guest() {
   const { inviteId } = useParams();
+  const location = useLocation();
   const [inviteData, setInviteData] = useState<any>(null);
   const [attending, setAttending] = useState<"yes" | "no" | null>(null);
   const [bringing, setBringing] = useState<number>(0);
@@ -29,6 +30,8 @@ export default function Guest() {
   }, [inviteId]);
 
   const currentUrl = window.location.href;
+  const redirectTarget = inviteId ? `/host/events/${inviteId}` : "/host/events";
+  const loginHref = `/hostLogIn?redirect=${encodeURIComponent(redirectTarget)}`;
 
   {/* <pre className="text-xs bg-gray-50 p-2 rounded">
         {JSON.stringify(inviteData, null, 2)}
@@ -38,7 +41,7 @@ export default function Guest() {
   
 
     <div className="max-w-md mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-bold">You're Invited!</h1>
+      <h1 className="text-2xl font-bold">{inviteData?.eventName || "You're Invited!"}</h1>
       {inviteData ? (
         <>
           {/* <p><strong>Type:</strong> {inviteData.eventType?.join(", ")}</p> */}
@@ -54,6 +57,20 @@ export default function Guest() {
           )}
           <p><strong>Time:</strong> {" "}{inviteData.date}, {inviteData.startTime} - {inviteData.endTime}</p>
           <p><strong>Location:</strong> {inviteData.location}</p>
+          {inviteData.location && (
+            <div className="mt-3 rounded-xl overflow-hidden border border-gray-200">
+              <iframe
+                title="Event location map"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(inviteData.location)}&z=15&output=embed`}
+                width="100%"
+                height="200"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="border-0"
+                allowFullScreen
+              />
+            </div>
+          )}
           {inviteData.customMessage && (
             <p className="italic">💬 {inviteData.customMessage}</p>
           )}
@@ -90,9 +107,8 @@ export default function Guest() {
       )}
 
       <div className="fixed top-6 right-6 flex gap-2">
-            <PillButton>Log in</PillButton>
-            
-          </div>
+        <PillButton to={loginHref}>Log in</PillButton>
+      </div>
     </div>
 
     
