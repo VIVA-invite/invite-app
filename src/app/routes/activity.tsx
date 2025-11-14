@@ -4,8 +4,8 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PillButton from "../utils/pillButton";
-import {DndContext, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent, DragMoveEvent, useDraggable} from "@dnd-kit/core";
-import {restrictToVerticalAxis, restrictToParentElement} from "@dnd-kit/modifiers";
+import {DndContext, PointerSensor, useSensor, useSensors, 
+  DragStartEvent, DragEndEvent, DragMoveEvent, useDraggable} from "@dnd-kit/core";
 import React from "react";
 import { useInvitation } from "../utils/invitationContext"; // context holding event info
 

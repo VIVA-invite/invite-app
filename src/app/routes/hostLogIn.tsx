@@ -1,8 +1,6 @@
 /** 
  * Host log in page 
  */
-
-// src/routes/hostLogIn.tsx
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FirebaseError } from "firebase/app";
