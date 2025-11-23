@@ -9,7 +9,7 @@ const sections = [
   { label: "Theme", path: "/theme" },
   { label: "Date & Time", path: "/dateTime" },
   { label: "Activities", path: "/activity" },
-  { label: "Invitees", path: "/invitee" },
+  // { label: "Invitees", path: "/invitee" },
   { label: "Location", path: "/location" },
   { label: "Review", path: "/confirmation" },
 ];
