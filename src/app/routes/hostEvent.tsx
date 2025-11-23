@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Calendar, MapPin, Users, ListChecks, Plus, Eye, Pencil } from "lucide-react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { doc, getDoc, updateDoc, type DocumentData } from "firebase/firestore";
+import { doc, getDoc, getDocs, updateDoc, collection, onSnapshot, type DocumentData } from "firebase/firestore";
 import PillButton from "src/app/utils/pillButton";
 import { auth, db } from "../lib/firebase";
 
@@ -46,6 +46,13 @@ export default function HostEvent(): ReactElement {
   const [draftName, setDraftName] = useState("");
   const [draftLocation, setDraftLocation] = useState("");
   const [draftMessage, setDraftMessage] = useState("");
+
+  const [rsvpSummary, setRsvpSummary] = useState({
+    going: 0,
+    maybe: 0,
+    declined: 0,
+    noResponse: 0,
+  });
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -95,6 +102,35 @@ export default function HostEvent(): ReactElement {
     };
   }, [inviteId]);
 
+useEffect(() => {
+  if (!inviteId || !invite) return; // ⚡ 多加 invite 判断
+  const guestsRef = collection(db, "invites", inviteId, "guests");
+  console.log("👀 Listening to:", `invites/${inviteId}/guests`);
+
+  const unsub = onSnapshot(guestsRef, (snapshot) => {
+    let going = 0, maybe = 0, declined = 0;
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.attending === "yes") going++;
+      else if (data.attending === "maybe") maybe++;
+      else if (data.attending === "no") declined++;
+    });
+    console.log("📡 Live update:", { going, maybe, declined });
+    setRsvpSummary({ going, maybe, declined, noResponse: 0 });
+  });
+
+    return () => unsub();
+  }, [inviteId, invite]);
+
+  const formatMinutes = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    const suffix = h >= 12 ? "PM" : "AM";
+    const displayHour = h % 12 === 0 ? 12 : h % 12;
+
+    return `${displayHour}:${m.toString().padStart(2, "0")} ${suffix}`;
+  };
+  
   const inviteBelongsToHost = useMemo(() => {
     if (!host || !invite) return true;
     if (!invite.hostUid) return true;
@@ -121,10 +157,17 @@ export default function HostEvent(): ReactElement {
 
   const locationLabel = invite?.location?.trim() || "Location to be decided";
   const invitees = useMemo(() => (Array.isArray(invite?.invitees) ? invite!.invitees! : []), [invite]);
-  const activities = useMemo(
-    () => (Array.isArray(invite?.activities) ? invite!.activities!.slice().sort((a, b) => (a.time ?? "").localeCompare(b.time ?? "")) : []),
-    [invite]
-  );
+  const activities = useMemo(() => {
+    if (!Array.isArray(invite?.activities)) return [];
+
+    return invite.activities
+      .slice()
+      .sort((a, b) => {
+        const ta = typeof a.time === "number" ? a.time : 0;
+        const tb = typeof b.time === "number" ? b.time : 0;
+        return ta - tb;
+      });
+  }, [invite]);
 
   const eventTypeLabel = useMemo(() => {
     if (!invite) return "Not specified";
@@ -139,10 +182,10 @@ export default function HostEvent(): ReactElement {
     return "No theme selected";
   }, [invite]);
 
-  const rsvpSummary = useMemo(() => {
-    const total = invitees.length;
-    return { going: 0, maybe: 0, declined: 0, noResponse: total };
-  }, [invitees.length]);
+  // const rsvpSummary = useMemo(() => {
+  //   const total = invitees.length;
+  //   return { going: 0, maybe: 0, declined: 0, noResponse: total };
+  // }, [invitees.length]);
 
   const hostDisplayName = useMemo(() => {
     if (host?.displayName) return host.displayName;
@@ -454,7 +497,8 @@ export default function HostEvent(): ReactElement {
               activities.map((activity) => (
                 <div key={activity.id ?? activity.name} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
                   <span className="font-medium">{activity.name || "Untitled activity"}</span>
-                  <span className="text-gray-500">{activity.time || "TBD"}</span>
+                  <span className="text-gray-500">{typeof activity.time === "number" ? formatMinutes(activity.time) : "TBD"}
+</span>
                 </div>
               ))
             ) : (

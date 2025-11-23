@@ -50,7 +50,7 @@ export default function Activity() {
         endMinutes = startMinutes + 60; // ensure at least one hour window
     }
   
-    const [activities, setActivities] = useState<Activity[]>([]);
+    const {activities, setActivities} = useInvitation();
     const [name, setName] = useState("");
     const [time, setTime] = useState("");
 
