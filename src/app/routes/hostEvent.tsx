@@ -8,6 +8,7 @@ import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { doc, getDoc, getDocs, updateDoc, collection, onSnapshot, type DocumentData } from "firebase/firestore";
 import PillButton from "src/app/utils/pillButton";
 import { auth, db } from "../lib/firebase";
+import { useInvitation } from "../utils/invitationContext";
 
 interface InviteDoc extends DocumentData {
   hostUid?: string;
@@ -32,9 +33,27 @@ const QUICK_LINKS = [
   { id: "activities", label: "Edit activities", to: "/activity" },
 ];
 
+const VIVA_STORAGE_KEYS = [
+  "viva:eventName",
+  "viva:partyType",
+  "viva:theme",
+  "viva:dateTime",
+  "viva:activityState",
+  "viva:location",
+];
+
 export default function HostEvent(): ReactElement {
   const { inviteId } = useParams();
   const navigate = useNavigate();
+  const {
+    setEventName,
+    setEventType,
+    setTheme,
+    setDate,
+    setStartTime,
+    setEndTime,
+    setActivities,
+  } = useInvitation();
 
   const [host, setHost] = useState<User | null>(auth.currentUser);
   const [authReady, setAuthReady] = useState(false);
@@ -228,6 +247,14 @@ useEffect(() => {
   };
 
   const handleCreateNewEvent = async () => {
+    VIVA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    setEventName("");
+    setEventType([]);
+    setTheme([]);
+    setDate("");
+    setStartTime("");
+    setEndTime("");
+    setActivities([]);
     if (inviteUrl && typeof navigator !== "undefined") {
       const clipboard = navigator.clipboard;
       if (clipboard?.writeText) {
@@ -238,6 +265,7 @@ useEffect(() => {
         }
       }
     }
+
     await signOut(auth).catch(() => undefined);
     navigate("/", { replace: true });
   };

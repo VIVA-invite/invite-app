@@ -2,11 +2,10 @@
  * User enter the theme of the party (spooky etc.)
  */
 import { useEffect, useState } from "react"
-import { Button } from "src/app/components/ui/button"
 import { Card, CardContent } from "src/app/components/ui/card"
 import { Input } from "src/app/components/ui/input"
 import PillButton from "src/app/utils/pillButton"
-import { useInvitation } from "../utils/invitationContext"; // context holding event info
+import { useInvitation } from "../utils/invitationContext" // context holding event info
 
 const vibeTags = {
   colors: ["Pastel", "Neon", "Monochrome", "Gold & Glitter"],
@@ -15,37 +14,49 @@ const vibeTags = {
   style: ["Cottagecore", "Retro", "Sci-fi", "Fairytale", "Minimalist"]
 }
 
-const STORAGE_KEY = "viva:theme";
+const STORAGE_KEY = "viva:theme"
 
 export default function Theme() {
-  const { theme, setTheme } = useInvitation();
+  const { theme, setTheme } = useInvitation()
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customTheme, setCustomTheme] = useState("")
-
-  const [hydrated, setHydrated] = useState(false);
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
-        const saved = JSON.parse(raw) as { selectedTags?: string[]; customTheme?: string }
-        if (Array.isArray(saved.selectedTags)) setSelectedTags(saved.selectedTags);
-        if (typeof saved.customTheme === "string") setCustomTheme(saved.customTheme);
+        const saved = JSON.parse(raw) as {
+          selectedTags?: string[]
+          customTheme?: string
+        }
+        if (Array.isArray(saved.selectedTags)) setSelectedTags(saved.selectedTags)
+        if (typeof saved.customTheme === "string") setCustomTheme(saved.customTheme)
       }
-    } catch {}
-    finally {
-      setHydrated(true);
+    } catch {
+      // ignore
+    } finally {
+      setHydrated(true)
     }
   }, [])
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated) return
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({ selectedTags, customTheme })
     )
     setTheme([...selectedTags, ...(customTheme ? [customTheme] : [])])
-  }, [hydrated, selectedTags, customTheme])
+  }, [hydrated, selectedTags, customTheme, setTheme])
+
+  // 刷新 / 关闭前：清除 localStorage
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [])
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev =>
@@ -64,6 +75,13 @@ export default function Theme() {
   }
 
   const suggestion = getSuggestion()
+
+  const handleReset = () => {
+    setSelectedTags([])
+    setCustomTheme("")
+    setTheme([])
+    localStorage.removeItem(STORAGE_KEY)
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -99,7 +117,7 @@ export default function Theme() {
       {suggestion && (
         <Card className="mt-4 border-dashed border-2 border-pink-500 animate-pulse">
           <CardContent className="p-4 text-pink-700">
-             {suggestion}
+            {suggestion}
           </CardContent>
         </Card>
       )}
@@ -118,7 +136,7 @@ export default function Theme() {
                     <PillButton
                       key={tag}
                       isSelected
-                      onClick={() => toggleTag(tag)}  // clicking removes it
+                      onClick={() => toggleTag(tag)} // clicking removes it
                     >
                       {tag}
                     </PillButton>
@@ -135,9 +153,11 @@ export default function Theme() {
         </div>
       </div>
 
-
       <div className="fixed bottom-6 right-6 flex gap-2">
         <PillButton to="/">Home</PillButton>
+        <PillButton type="button" onClick={handleReset}>
+          Reset
+        </PillButton>
         <PillButton to="/dateTime">Next</PillButton>
       </div>
     </div>

@@ -21,7 +21,6 @@ const STORAGE_KEY = "viva:partyType";
 export default function PartyType () {
   const { eventType, setEventType } = useInvitation();
   const [customType, setCustomType] = useState("");
-
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -33,8 +32,8 @@ export default function PartyType () {
           setEventType(saved);
         }
       }
-    } catch {}
-    finally {
+    } catch {
+    } finally {
       setHydrated(true);
     }
   }, [setEventType]);
@@ -43,7 +42,16 @@ export default function PartyType () {
     if (!hydrated) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(eventType));
   }, [hydrated, eventType]);
-  
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      localStorage.removeItem(STORAGE_KEY);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
   const handleSelect = (type: string) => {
     if (eventType.includes(type)) {
       setEventType(eventType.filter(t => t !== type));
@@ -56,39 +64,48 @@ export default function PartyType () {
     e.preventDefault();
     const trimmed = customType.trim();
     if (trimmed && !eventType.includes(trimmed)) {
-        setEventType([...eventType, trimmed]);
-        setCustomType("");
+      setEventType([...eventType, trimmed]);
+      setCustomType("");
     }
+  };
+
+  const handleReset = () => {
+    setEventType([]);
+    setCustomType("");
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
     <main>
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center">
         <h2 className="text-2xl font-semibold mb-4 text-center">What’s the Occasion?</h2>
 
         <div className="flex flex-wrap gap-2 mb-4">
-            {predefinedTypes.map((type) => (
+          {predefinedTypes.map((type) => (
             <PillButton
-                isSelected={eventType.includes(type)}
-                onClick={() => handleSelect(type)}
-            >{type}</PillButton>
-            ))}
+              key={type}
+              isSelected={eventType.includes(type)}
+              onClick={() => handleSelect(type)}
+            >
+              {type}
+            </PillButton>
+          ))}
         </div>
 
         <form onSubmit={handleCustomSubmit} className="flex gap-2 mb-6">
-            <input
+          <input
             type="text"
             value={customType}
             onChange={(e) => setCustomType(e.target.value)}
             placeholder="Add your own..."
             className="border border-gray-300 rounded-full px-4 py-2 w-full"
-            />
-            <button
+          />
+          <button
             type="submit"
             className="bg-blue-500 text-white rounded-full px-4 py-2 hover:bg-blue-600"
-            >
+          >
             Add
-            </button>
+          </button>
         </form>
 
         {eventType && eventType.length > 0 && (
@@ -107,13 +124,13 @@ export default function PartyType () {
             </div>
           </div>
         )}
-        
-        </div>
+      </div>
 
-        <div className="fixed bottom-6 right-6 flex gap-2">
-            <PillButton to="/">Home</PillButton>
-            <PillButton to="/theme">Next</PillButton>
-          </div>
+      <div className="fixed bottom-6 right-6 flex gap-2">
+        <PillButton to="/">Home</PillButton>
+        <PillButton onClick={handleReset}>Reset</PillButton>
+        <PillButton to="/theme">Next</PillButton>
+      </div>
     </main>
   );
 }

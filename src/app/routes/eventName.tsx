@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PillButton from "src/app/utils/pillButton";
 import { useInvitation } from "../utils/invitationContext";
@@ -11,10 +11,43 @@ const SUGGESTIONS = [
   "Game Night Extravaganza"
 ];
 
+const STORAGE_KEY = "viva:eventName";
+
 export default function EventName() {
   const navigate = useNavigate();
   const { eventName, setEventName } = useInvitation();
   const [showExamples, setShowExamples] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setEventName(stored);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setHydrated(true);
+    }
+  }, [setEventName]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (eventName.trim()) {
+      localStorage.setItem(STORAGE_KEY, eventName);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [hydrated, eventName]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      localStorage.removeItem(STORAGE_KEY);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -25,6 +58,12 @@ export default function EventName() {
   const handleSuggestion = (suggestion: string) => {
     setEventName(suggestion);
     setShowExamples(false);
+  };
+
+  const handleReset = () => {
+    setEventName("");
+    setShowExamples(false);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
@@ -86,7 +125,17 @@ export default function EventName() {
           <PillButton to="/" className="px-4 py-2">
             Home
           </PillButton>
-          <PillButton type="submit" disabled={!eventName.trim()} className="px-4 py-2" to="/partyType">
+
+          <PillButton type="button" onClick={handleReset} className="px-4 py-2">
+            Reset
+          </PillButton>
+
+          <PillButton
+            type="submit"
+            disabled={!eventName.trim()}
+            className="px-4 py-2"
+            to="/partyType"
+          >
             Next
           </PillButton>
         </div>

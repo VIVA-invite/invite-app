@@ -10,6 +10,15 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
 import PillButton from "../utils/pillButton";
 
+const VIVA_STORAGE_KEYS = [
+  "viva:eventName",
+  "viva:partyType",
+  "viva:theme",
+  "viva:dateTime",
+  "viva:activityState",
+  "viva:location",
+];
+
 export default function Confirmation() {
   const [customMessage, setCustomMessage] = useState("");
   const invitationData = useInvitation();
@@ -28,6 +37,14 @@ export default function Confirmation() {
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      VIVA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
   const hostUsername = useMemo(() => {
     if (!host) return null;
     if (host.displayName) return host.displayName;
@@ -43,7 +60,9 @@ export default function Confirmation() {
       return;
     }
     if (!host) {
-      setErrorMessage("Create a host username and password before saving. Each invitation uses its own login.");
+      setErrorMessage(
+        "Create a host username and password before saving. Each invitation uses its own login."
+      );
       return;
     }
 
@@ -65,6 +84,9 @@ export default function Confirmation() {
 
       const docRef = await addDoc(collection(db, "invites"), newInvite);
       await signOut(auth).catch(() => undefined);
+
+      VIVA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+
       navigate(`/guest/${docRef.id}`);
     } catch (error) {
       console.error("Error saving invite:", error);
@@ -73,10 +95,15 @@ export default function Confirmation() {
       setSaving(false);
     }
   };
+
+  const handleReset = () => {
+    setCustomMessage("");
+    VIVA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  };
+
   return (
     <div className="max-w-md mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-bold">🎉 Review & Confirm</h1>
-      {/* Display summary here */}
       <textarea
         placeholder="Leave a message for your guests..."
         value={customMessage}
@@ -85,24 +112,29 @@ export default function Confirmation() {
       />
       {errorMessage && <div className="text-sm text-red-600">{errorMessage}</div>}
 
-      <PillButton onClick={handleConfirm} disabled={saving || !authReady}>
-         {saving ? "Saving..." : "Confirm & Generate Link"}
-      </PillButton>
-       <br /> <br />
-        <p className="text-sm text-gray-500">
-          {host
-            ? `Signed in as ${hostUsername ?? "your host account"}. Finishing will sign you out.`
-            : "Need a host login? Create a new username and password for this invite."}
-        </p>
-        <div className="flex gap-2">
-          <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
-            {host ? "Switch host login" : "Log in as a Host"}
-          </PillButton>
-          
-          <PillButton to="/">
-              Home
-          </PillButton>
-        </div>
+      <div className="flex gap-2">
+        <PillButton type="button" onClick={handleReset}>
+          Reset
+        </PillButton>
+        <PillButton onClick={handleConfirm} disabled={saving || !authReady}>
+          {saving ? "Saving..." : "Confirm & Generate Link"}
+        </PillButton>
+      </div>
+
+      <br />
+      <br />
+      <p className="text-sm text-gray-500">
+        {host
+          ? `Signed in as ${hostUsername ?? "your host account"}. Finishing will sign you out.`
+          : "Need a host login? Create a new username and password for this invite."}
+      </p>
+      <div className="flex gap-2">
+        <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
+          {host ? "Switch host login" : "Log in as a Host"}
+        </PillButton>
+
+        <PillButton to="/">Home</PillButton>
+      </div>
     </div>
   );
 }

@@ -1,24 +1,25 @@
 /**
  * Page where user enters the date and time for the invitation
  */
-import { JapaneseYen } from "lucide-react";
 import { useEffect, useState } from "react";
 import PillButton from "src/app/utils/pillButton";
 import { useInvitation } from "src/app/utils/invitationContext";
 
+const STORAGE_KEY = "viva:dateTime";
+
 export default function DateTime() {
   const {
-    date, 
-    setDate, 
-    startTime, 
-    setStartTime, 
-    endTime, 
-    setEndTime
+    date,
+    setDate,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
   } = useInvitation();
-  
+
   // Local storage
   const [hydrated, setHydrated] = useState(false);
-  const STORAGE_KEY = "viva:dateTime";
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -32,11 +33,12 @@ export default function DateTime() {
         if (typeof saved.startTime === "string") setStartTime(saved.startTime);
         if (typeof saved.endTime === "string") setEndTime(saved.endTime);
       }
-    } catch {}
-    finally {
+    } catch {
+      // ignore
+    } finally {
       setHydrated(true);
     }
-  }, []);
+  }, [setDate, setStartTime, setEndTime]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -46,7 +48,20 @@ export default function DateTime() {
     );
   }, [hydrated, date, startTime, endTime]);
 
-  // const isComplete = date && startTime && endTime;
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      localStorage.removeItem(STORAGE_KEY);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  const handleReset = () => {
+    setDate("");
+    setStartTime("");
+    setEndTime("");
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   return (
     <main className="max-w-md mx-auto p-6 space-y-6">
@@ -90,6 +105,9 @@ export default function DateTime() {
 
       <div className="fixed bottom-6 right-6 flex gap-2">
         <PillButton to="/">Home</PillButton>
+        <PillButton type="button" onClick={handleReset}>
+          Reset
+        </PillButton>
         <PillButton to="/activity">Next</PillButton>
       </div>
     </main>
