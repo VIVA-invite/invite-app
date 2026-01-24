@@ -29,7 +29,7 @@ const QUICK_LINKS = [
   { id: "event-name", label: "Edit event name", to: "/eventName" },
   { id: "date-time", label: "Edit date & time", to: "/dateTime" },
   { id: "location", label: "Edit location", to: "/location" },
-  { id: "invitees", label: "Manage invitees", to: "/invitee" },
+  //{ id: "invitees", label: "Manage invitees", to: "/invitee" },
   { id: "activities", label: "Edit activities", to: "/activity" },
 ];
 
@@ -122,7 +122,7 @@ export default function HostEvent(): ReactElement {
   }, [inviteId]);
 
 useEffect(() => {
-  if (!inviteId || !invite) return; // ⚡ 多加 invite 判断
+  if (!inviteId || !invite) return;
   const guestsRef = collection(db, "invites", inviteId, "guests");
   console.log("👀 Listening to:", `invites/${inviteId}/guests`);
 
@@ -509,6 +509,7 @@ useEffect(() => {
               <Link
                 key={link.id}
                 to={link.to}
+                state={{ mode: "edit", inviteId }}
                 className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-gray-50 text-blue-600"
               >
                 <span>{link.label}</span>
@@ -525,8 +526,7 @@ useEffect(() => {
               activities.map((activity) => (
                 <div key={activity.id ?? activity.name} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
                   <span className="font-medium">{activity.name || "Untitled activity"}</span>
-                  <span className="text-gray-500">{typeof activity.time === "number" ? formatMinutes(activity.time) : "TBD"}
-</span>
+                  <span className="text-gray-500">{typeof activity.time === "number" ? formatMinutes(activity.time) : "TBD"}</span>
                 </div>
               ))
             ) : (

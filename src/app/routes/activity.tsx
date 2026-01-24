@@ -1,7 +1,7 @@
 /**
  * Activity page with draggable timeline bar
  */
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PillButton from "../utils/pillButton";
 import {
@@ -16,6 +16,8 @@ import {
 } from "@dnd-kit/core";
 import React from "react";
 import { useInvitation } from "../utils/invitationContext"; // context holding event info
+import { getDoc, doc, updateDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 type Activity = {
   id: number;
@@ -47,8 +49,20 @@ const STORAGE_KEY = "viva:activityState";
 export default function Activity() {
   const invitationData = useInvitation();
   const location = useLocation();
-  const { startTime = invitationData.startTime, endTime = invitationData.endTime } =
-    location.state || {};
+  const { mode = "", inviteId = "" } = location.state || {};
+  const isEdit = mode === "edit";
+  const navigate = useNavigate();
+  // const { startTime = invitationData.startTime, endTime = invitationData.endTime } =
+  //   location.state || {};
+  const startTime =
+    invitationData.startTime ??
+    location.state?.startTime ??
+    DEFAULT_START;
+
+  const endTime =
+    invitationData.endTime ??
+    location.state?.endTime ??
+    DEFAULT_END;
 
   const resolvedStart = startTime ?? DEFAULT_START;
   const resolvedEnd = endTime ?? DEFAULT_END;
@@ -80,36 +94,34 @@ export default function Activity() {
 
   // Local storage: restore
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-
-      const saved = JSON.parse(raw) as {
-        startTime?: string;
-        endTime?: string;
-        activities?: Activity[];
-        name?: string;
-        time?: string;
+    if (isEdit && inviteId) {
+      const fetchActivities = async () => {
+        try {
+          const snap = await getDoc(doc(db, "invites", inviteId));
+          if (snap.exists()) {
+            const data = snap.data();
+            if (Array.isArray(data.activities)) {
+              const loadedActs = data.activities
+                .map((a) => ({
+                  ...a,
+                  time: parseInt(a.time, 10), // Ensure time is number
+                }))
+                .sort((a, b) => (a.time === b.time ? -1 : a.time - b.time));
+              setActivities(loadedActs);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch activities:", err);
+        } finally {
+          setHydrated(true);
+        }
       };
-
-      const sM = parseTime(saved.startTime ?? resolvedStart, startMinutes);
-      const eM = parseTime(saved.endTime ?? resolvedEnd, endMinutes);
-
-      const clampTime = (v: number) => Math.min(Math.max(v, sM), eM);
-
-      const restoreActs = (saved.activities || [])
-        .map((a) => ({ ...a, time: clampTime(a.time) }))
-        .sort((a, b) => (a.time === b.time ? -1 : a.time - b.time));
-
-      setActivities(restoreActs);
-      if (typeof saved.name === "string") setName(saved.name);
-      if (typeof saved.time === "string") setTime(saved.time);
-    } catch {
-      // ignore
-    } finally {
+      fetchActivities();
+    } else {
       setHydrated(true);
     }
-  }, [resolvedStart, resolvedEnd, setActivities]);
+  }, [isEdit, inviteId, setActivities]);
+
 
   // Local storage: persist
   useEffect(() => {
@@ -183,6 +195,25 @@ export default function Activity() {
     setPreviewTime(yToTime(y));
   };
 
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    if (isEdit && inviteId) {
+      try {
+        await updateDoc(doc(db, "invites", inviteId), {
+          activities,
+          updatedAt: new Date(),
+        });
+        localStorage.removeItem(STORAGE_KEY);
+        navigate(`/host/events/${inviteId}`);
+      } catch (err) {
+        console.error("Failed to save activities:", err);
+      }
+    } else {
+      navigate("/location", { state: { mode, inviteId } });
+    }
+  };
+
   const handleReset = () => {
     setActivities([]);
     setName("");
@@ -235,6 +266,11 @@ export default function Activity() {
                 e.preventDefault();
                 if (!name || !time) return;
 
+                if (!hydrated) {
+                  alert("Loading event time range, please wait.");
+                  return;
+                }
+
                 const newId = Date.now();
                 const [hours, minutes] = time.split(":").map(Number);
                 const totalMins = hours * 60 + minutes;
@@ -283,11 +319,38 @@ export default function Activity() {
       </div>
 
       <div className="fixed bottom-6 right-6 flex gap-2">
-        <PillButton to="/">Home</PillButton>
-        <PillButton type="button" onClick={handleReset}>
-          Reset
-        </PillButton>
-        <PillButton to="/location">Next</PillButton>
+        {isEdit && inviteId ? (
+          <>
+            <PillButton
+              type="button"
+              onClick={handleSubmit}
+              className="px-4 py-2"
+            >
+              Save
+            </PillButton>
+            <PillButton
+              type="button"
+              onClick={() => navigate(`/host/events/${inviteId}`)}
+              className="px-4 py-2"
+            >
+              Cancel
+            </PillButton>
+          </>
+        ) : (
+          <>
+            <PillButton to="/">Home</PillButton>
+            <PillButton type="button" onClick={handleReset}>
+              Reset
+            </PillButton>
+            <PillButton
+              type="button"
+              onClick={() => navigate("/location", { state: { mode, inviteId } })}
+              className="px-4 py-2"
+            >
+              Next
+            </PillButton>
+          </>
+        )}
       </div>
     </main>
   );

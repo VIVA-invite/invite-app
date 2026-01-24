@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PillButton from "src/app/utils/pillButton";
 import { useInvitation } from "../utils/invitationContext";
+import { getDoc, doc, updateDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 const SUGGESTIONS = [
   "XXX's Birthday Picnic",
@@ -14,23 +16,38 @@ const SUGGESTIONS = [
 const STORAGE_KEY = "viva:eventName";
 
 export default function EventName() {
+  const location = useLocation();
+  const { mode = "", inviteId = "" } = location.state || {};
+  const isEdit = mode === "edit";
   const navigate = useNavigate();
   const { eventName, setEventName } = useInvitation();
   const [showExamples, setShowExamples] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setEventName(stored);
-      }
-    } catch {
-      // ignore
-    } finally {
+    if (isEdit && inviteId) {
+      const fetchEventName = async () => {
+        try {
+          const snap = await getDoc(doc(db, "invites", inviteId));
+          if (snap.exists()) {
+            const data = snap.data();
+            if (typeof data.eventName === "string") {
+              setEventName(data.eventName);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch event name:", err);
+        } finally {
+          setHydrated(true);
+        }
+      };
+      fetchEventName();
+    } else {
       setHydrated(true);
     }
-  }, [setEventName]);
+  }, [isEdit, inviteId, setEventName]);
+
+
 
   useEffect(() => {
     if (!hydrated) return;
@@ -49,11 +66,22 @@ export default function EventName() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!eventName.trim()) return;
-    navigate("/partyType");
+
+    if (isEdit && inviteId) {
+      // edit mode: save to Firestore
+      await updateDoc(doc(db, "invites", inviteId), {
+        eventName: eventName.trim(),
+      });
+      navigate(`/host/events/${inviteId}`);
+    } else {
+      // creation mode: navigate to next page
+      navigate("/partyType");
+    }
   };
+
 
   const handleSuggestion = (suggestion: string) => {
     setEventName(suggestion);
@@ -122,22 +150,47 @@ export default function EventName() {
         )}
 
         <div className="flex gap-3 justify-end">
-          <PillButton to="/" className="px-4 py-2">
-            Home
-          </PillButton>
-
-          <PillButton type="button" onClick={handleReset} className="px-4 py-2">
-            Reset
-          </PillButton>
-
-          <PillButton
-            type="submit"
-            disabled={!eventName.trim()}
-            className="px-4 py-2"
-            to="/partyType"
-          >
-            Next
-          </PillButton>
+          {isEdit ? (
+            <>
+              <PillButton
+                type="submit"
+                disabled={!eventName.trim()}
+                className="px-4 py-2"
+              >
+                Save
+              </PillButton>
+              <PillButton
+                type="button"
+                onClick={() => navigate(`/host/events/${inviteId}`)}
+                className="px-4 py-2"
+              >
+                Cancel
+              </PillButton>
+            </>
+          ) : (
+            <>
+              <PillButton
+                to="/"
+                className="px-4 py-2"
+              >
+                Home
+              </PillButton>
+              <PillButton
+                type="button"
+                onClick={handleReset} 
+                className="px-4 py-2"
+              >
+                Reset
+              </PillButton>
+              <PillButton
+                type="submit"
+                disabled={!eventName.trim()}
+                className="px-4 py-2"
+              >
+                Next
+              </PillButton>
+            </>
+          )}
         </div>
       </form>
     </div>
