@@ -58,7 +58,7 @@ export default function Guest() {
   }, [attending]);
 
   const currentUrl = window.location.href;
-  const redirectTarget = inviteId ? `/host/events/${inviteId}` : "/host/events";
+  const redirectTarget = "/host";
   const loginHref = `/hostLogIn?redirect=${encodeURIComponent(redirectTarget)}`;
   
    const handleSubmitRSVP = async () => {

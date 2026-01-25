@@ -15,6 +15,7 @@ import HostLogIn from './routes/hostLogIn';
 import HostEvent from './routes/hostEvent';
 import EventName from './routes/eventName';
 import { InvitationProvider } from './utils/invitationContext';
+import { EventDashboard, UserDashboard } from '../features/dashboard';
 
 
 const routes = [
@@ -28,6 +29,8 @@ const routes = [
     ),
     children: [
       { index: true, element: <Index /> },
+      { path: 'host', element: <UserDashboard /> },
+      { path: 'host/events/:inviteId/overview', element: <EventDashboard /> },
       { path: 'eventName', element: <EventName /> },
       { path: 'invitee', element: <Invitee /> },
       { path: 'location', element: <Location /> },

@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useInvitation } from "../utils/invitationContext"; // context holding event info
 import { auth, db } from "../lib/firebase";
 import { addDoc, collection } from "firebase/firestore";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 import PillButton from "../utils/pillButton";
 
@@ -61,7 +61,7 @@ export default function Confirmation() {
     }
     if (!host) {
       setErrorMessage(
-        "Create a host username and password before saving. Each invitation uses its own login."
+        "Create a host username and password before saving. Your host account is used across all events."
       );
       return;
     }
@@ -83,8 +83,6 @@ export default function Confirmation() {
       };
 
       const docRef = await addDoc(collection(db, "invites"), newInvite);
-      await signOut(auth).catch(() => undefined);
-
       VIVA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 
       navigate(`/guest/${docRef.id}`);
@@ -125,8 +123,8 @@ export default function Confirmation() {
       <br />
       <p className="text-sm text-gray-500">
         {host
-          ? `Signed in as ${hostUsername ?? "your host account"}. Finishing will sign you out.`
-          : "Need a host login? Create a new username and password for this invite."}
+          ? `Signed in as ${hostUsername ?? "your host account"}. You can create multiple events with this account.`
+          : "Need a host login? Create a unique username and password to save your invite."}
       </p>
       <div className="flex gap-2">
         <PillButton to={`/hostLogIn?redirect=${encodeURIComponent(location.pathname)}`}>
