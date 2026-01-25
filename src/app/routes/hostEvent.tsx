@@ -72,6 +72,7 @@ export default function HostEvent(): ReactElement {
     declined: 0,
     noResponse: 0,
   });
+  const [rsvpByGuest, setRsvpByGuest] = useState<Record<string, "yes" | "maybe" | "no">>({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -128,13 +129,22 @@ useEffect(() => {
 
   const unsub = onSnapshot(guestsRef, (snapshot) => {
     let going = 0, maybe = 0, declined = 0;
+    const nextByGuest: Record<string, "yes" | "maybe" | "no"> = {};
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
-      if (data.attending === "yes") going++;
-      else if (data.attending === "maybe") maybe++;
-      else if (data.attending === "no") declined++;
+      if (data.attending === "yes") {
+        going++;
+        nextByGuest[docSnap.id] = "yes";
+      } else if (data.attending === "maybe") {
+        maybe++;
+        nextByGuest[docSnap.id] = "maybe";
+      } else if (data.attending === "no") {
+        declined++;
+        nextByGuest[docSnap.id] = "no";
+      }
     });
     console.log("📡 Live update:", { going, maybe, declined });
+    setRsvpByGuest(nextByGuest);
     setRsvpSummary({ going, maybe, declined, noResponse: 0 });
   });
 
@@ -176,6 +186,26 @@ useEffect(() => {
 
   const locationLabel = invite?.location?.trim() || "Location to be decided";
   const invitees = useMemo(() => (Array.isArray(invite?.invitees) ? invite!.invitees! : []), [invite]);
+  const noResponseCount = useMemo(() => {
+    if (!invitees.length) return 0;
+    let responded = 0;
+    invitees.forEach((name) => {
+      if (rsvpByGuest[name]) responded++;
+    });
+    return Math.max(invitees.length - responded, 0);
+  }, [invitees, rsvpByGuest]);
+
+  const comingGuests = useMemo(() => {
+    return Object.entries(rsvpByGuest)
+      .filter(([_, status]) => status === "yes" || status === "maybe")
+      .sort(([a], [b]) => a.localeCompare(b));
+  }, [rsvpByGuest]);
+
+  const declinedGuests = useMemo(() => {
+    return Object.entries(rsvpByGuest)
+      .filter(([_, status]) => status === "no")
+      .sort(([a], [b]) => a.localeCompare(b));
+  }, [rsvpByGuest]);
   const activities = useMemo(() => {
     if (!Array.isArray(invite?.activities)) return [];
 
@@ -422,7 +452,7 @@ useEffect(() => {
             </div>
             <div className="rounded-xl bg-gray-50 px-4 py-3 border border-gray-200">
               <p className="text-xs uppercase tracking-wide text-gray-600">No response</p>
-              <p className="text-2xl font-semibold text-gray-900">{rsvpSummary.noResponse}</p>
+              <p className="text-2xl font-semibold text-gray-900">{noResponseCount}</p>
             </div>
           </div>
         </div>
@@ -539,19 +569,48 @@ useEffect(() => {
       </div>
 
       <div className="rounded-2xl border bg-white shadow">
-        <div className="p-4 border-b font-semibold">Guest List</div>
+        <div className="p-4 border-b font-semibold">Who's Coming</div>
         <div className="p-4 space-y-3 text-sm">
-          {invitees.length > 0 ? (
+          {comingGuests.length > 0 ? (
             <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
-              {invitees.map((guest, idx) => (
-                <div key={`${guest}-${idx}`} className="flex items-center justify-between rounded-lg border px-3 py-2">
+              {comingGuests.map(([guest, status]) => {
+                const statusLabel = status === "yes" ? "Going" : "Maybe";
+                const statusClass = status === "yes"
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : "border-amber-200 bg-amber-50 text-amber-700";
+
+                return (
+                  <div key={guest} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                    <span>{guest}</span>
+                    <span className={`text-xs border rounded-full px-2 py-0.5 ${statusClass}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500">No RSVP responses yet.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-white shadow">
+        <div className="p-4 border-b font-semibold">Declined</div>
+        <div className="p-4 space-y-3 text-sm">
+          {declinedGuests.length > 0 ? (
+            <div className="max-h-72 overflow-y-auto pr-1 space-y-2">
+              {declinedGuests.map(([guest]) => (
+                <div key={guest} className="flex items-center justify-between rounded-lg border px-3 py-2">
                   <span>{guest}</span>
-                  <span className="text-gray-400 text-xs">No response yet</span>
+                  <span className="text-xs border rounded-full px-2 py-0.5 border-rose-200 bg-rose-50 text-rose-700">
+                    Declined
+                  </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No guests added yet. Add them on the Invitees page.</p>
+            <p className="text-gray-500">No declines yet.</p>
           )}
         </div>
       </div>

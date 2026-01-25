@@ -3,7 +3,9 @@
  */
 import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { db } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import PillButton from "../utils/pillButton";
 
@@ -15,6 +17,8 @@ export default function Guest() {
   const { inviteId } = useParams();
   const location = useLocation();
   const [inviteData, setInviteData] = useState<any>(null);
+  const [host, setHost] = useState<User | null>(auth.currentUser);
+  const [authReady, setAuthReady] = useState(false);
   const [attending, setAttending] = useState<"yes" | "no" | "maybe" | null>(null);
   const [bringing, setBringing] = useState<number>(0);
   const [guestName, setGuestName] = useState("");
@@ -29,6 +33,14 @@ export default function Guest() {
     };
     fetchInvite();
   }, [inviteId]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setHost(user);
+      setAuthReady(true);
+    });
+    return () => unsub();
+  }, []);
 
   const formatMinutes = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -203,7 +215,11 @@ export default function Guest() {
       )}
 
       <div className="fixed top-6 right-6 flex gap-2">
-        <PillButton to={loginHref}>Log in</PillButton>
+        {authReady && host ? (
+          <PillButton to={redirectTarget}>Dashboard</PillButton>
+        ) : (
+          <PillButton to={loginHref}>Log in</PillButton>
+        )}
       </div>
     </div>
     

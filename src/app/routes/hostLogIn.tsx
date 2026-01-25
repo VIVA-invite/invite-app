@@ -12,7 +12,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import type { User } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import PillButton from "../utils/pillButton";
 import { auth, db } from "../lib/firebase";
 
@@ -135,7 +135,27 @@ export default function HostLogIn() {
           }
           await signInWithEmailAndPassword(auth, inviteEmail, password);
         } else {
-          await signInWithEmailAndPassword(auth, usernameToEmail(normalizedUsername), password);
+          const hostQuery = query(
+            collection(db, "hosts"),
+            where("username", "==", normalizedUsername),
+            limit(2)
+          );
+          const hostSnap = await getDocs(hostQuery);
+          if (hostSnap.empty) {
+            throw new FirebaseError("auth/user-not-found", "No host found for this username.");
+          }
+          if (hostSnap.size > 1) {
+            throw new FirebaseError(
+              "auth/invalid-credential",
+              "This username is used by multiple invites. Please use the invite link to sign in."
+            );
+          }
+          const hostData = hostSnap.docs[0]?.data() as { email?: string | null };
+          const hostEmail = hostData?.email ?? null;
+          if (!hostEmail) {
+            throw new FirebaseError("auth/missing-email", "Host email not found for this username.");
+          }
+          await signInWithEmailAndPassword(auth, hostEmail, password);
         }
       } else {
         const email = buildUniqueEmail(normalizedUsername);
@@ -158,9 +178,13 @@ export default function HostLogIn() {
       }
       navigate(redirect, { replace: true });
     } catch (error) {
+      console.error("Host login error:", error);
       let message = "Unexpected error. Please try again.";
-      if (error instanceof FirebaseError) {
-        switch (error.code) {
+      const code = error instanceof FirebaseError
+        ? error.code
+        : (error as { code?: string | undefined }).code;
+      if (code) {
+        switch (code) {
           case "auth/user-not-found":
             message = "Username doesn't exist, please create an account.";
             break;
@@ -172,7 +196,9 @@ export default function HostLogIn() {
             message = "That username is already taken. Try a different one.";
             break;
           case "auth/missing-email":
-            message = "We couldn't find host login details for this invite.";
+            message = inviteId
+              ? "We couldn't find host login details for this invite."
+              : "We couldn't find host login details for this username.";
             break;
           case "auth/weak-password":
             message = "Password must be at least 6 characters long.";
@@ -184,8 +210,13 @@ export default function HostLogIn() {
             message = "Email/password sign-in is disabled for this project. Enable it in Firebase Authentication settings.";
             break;
         }
-        if (error.code === "auth/invalid-credential" && inviteId) {
-          message = "Username or password is incorrect for this invite.";
+        if (code === "auth/invalid-credential") {
+          const errorMessage = (error as { message?: string }).message ?? "";
+          if (errorMessage.includes("multiple invites")) {
+            message = "That username is used by multiple invites. Please use the invite link to sign in.";
+          } else if (inviteId) {
+            message = "Username or password is incorrect for this invite.";
+          }
         }
       }
       setErr(message);
@@ -206,7 +237,7 @@ export default function HostLogIn() {
   if (existingUser) {
     const displayName = existingUser.displayName || existingUser.email?.split("@")[0] || "host";
     const viewingSpecificInvite = Boolean(inviteId);
-    const goBackTarget = viewingSpecificInvite && inviteId ? `/host/events/${inviteId}` : redirect;
+    const dashboardTarget = viewingSpecificInvite && inviteId ? `/host/events/${inviteId}` : redirect;
     return (
       <div className="max-w-md mx-auto p-6 space-y-5">
         <h1 className="text-2xl font-bold">You're already signed in</h1>
@@ -221,8 +252,8 @@ export default function HostLogIn() {
         {err && <div className="text-sm text-red-600">{err}</div>}
 
         <div className="flex flex-col gap-3 pt-1">
-          <PillButton type="button" onClick={() => navigate(goBackTarget, { replace: true })} disabled={busy}>
-            Return to your invite
+          <PillButton type="button" onClick={() => navigate(dashboardTarget, { replace: true })} disabled={busy}>
+            Dashboard
           </PillButton>
           <PillButton type="button" onClick={handleSignOut} disabled={busy}>
             {busy ? "Signing out..." : "Sign out to create a new invite"}
