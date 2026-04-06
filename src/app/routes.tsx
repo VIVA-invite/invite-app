@@ -14,6 +14,7 @@ import Guest from './routes/guest';
 import HostLogIn from './routes/hostLogIn';
 import HostEvent from './routes/hostEvent';
 import EventName from './routes/eventName';
+import Polls from './routes/polls';
 import { InvitationProvider } from './utils/invitationContext';
 import { EventDashboard, UserDashboard } from '../features/dashboard';
 
@@ -38,6 +39,7 @@ const routes = [
       { path: 'activity', element: <Activity /> },
       { path: 'partyType', element: <PartyType /> },
       { path: 'theme', element: <Theme /> },
+      { path: 'polls', element: <Polls /> },
       { path: 'confirmation', element: <Confirmation /> },
       { path: 'guest/:inviteId', element: <Guest /> },
       { path: 'hostLogIn', element: <HostLogIn /> },

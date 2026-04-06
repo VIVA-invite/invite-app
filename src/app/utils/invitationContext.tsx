@@ -9,6 +9,11 @@ type Activity = {
   time: string; // in hh:mm
 };
 
+type Poll = {
+  question: string;
+  options: string[];
+};
+
 type InvitationData = {
   eventName: string;
   setEventName: (value: string) => void;
@@ -36,6 +41,9 @@ type InvitationData = {
 
   activities: Activity[];
   setActivities: (value: Activity[]) => void;
+
+  polls: Poll[];
+  setPolls: (value: Poll[]) => void;
 };
 
 const InvitationContext = createContext<InvitationData | undefined>(undefined);
@@ -50,6 +58,7 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [endTime, setEndTime] = useState<string | null>(null);
   const [invitees, setInvitees] = useState<string[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [polls, setPolls] = useState<Poll[]>([]);
 
   return (
     <InvitationContext.Provider
@@ -72,6 +81,8 @@ export const InvitationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setInvitees,
         activities,
         setActivities,
+        polls,
+        setPolls,
       }}
     >
       {children}

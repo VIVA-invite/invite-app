@@ -30,7 +30,7 @@ export default function Location() {
         <PillButton type="button" onClick={handleReset}>
           Reset
         </PillButton>
-        <PillButton to="/confirmation">Next</PillButton>
+        <PillButton to="/polls">Next</PillButton>
       </div>
     </div>
   );

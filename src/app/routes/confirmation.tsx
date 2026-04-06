@@ -17,6 +17,7 @@ const VIVA_STORAGE_KEYS = [
   "viva:dateTime",
   "viva:activityState",
   "viva:location",
+  "viva:polls",
 ];
 
 export default function Confirmation() {
@@ -83,6 +84,20 @@ export default function Confirmation() {
       };
 
       const docRef = await addDoc(collection(db, "invites"), newInvite);
+
+      // Create poll subcollection docs
+      if (Array.isArray(invitationData.polls) && invitationData.polls.length > 0) {
+        const pollsCol = collection(db, "invites", docRef.id, "polls");
+        for (const poll of invitationData.polls) {
+          await addDoc(pollsCol, {
+            question: poll.question,
+            options: poll.options.map((label: string, i: number) => ({ id: `opt-${i}`, label })),
+            isActive: true,
+            createdAt: new Date(),
+          });
+        }
+      }
+
       VIVA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 
       navigate(`/guest/${docRef.id}`);

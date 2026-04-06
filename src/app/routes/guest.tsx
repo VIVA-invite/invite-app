@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { db } from "../lib/firebase";
 import { auth } from "../lib/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, setDoc, onSnapshot, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import PillButton from "../utils/pillButton";
+import PollCard from "../components/PollCard";
 
 type Guest = {
   attending: boolean;
@@ -22,16 +23,28 @@ export default function Guest() {
   const [attending, setAttending] = useState<"yes" | "no" | "maybe" | null>(null);
   const [bringing, setBringing] = useState<number>(0);
   const [guestName, setGuestName] = useState("");
+  const [polls, setPolls] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchInvite = async () => {
-      if(!inviteId) return;
-      const docSnap = await getDoc(doc(db, "invites", inviteId));
+    if (!inviteId) return;
+    const unsub = onSnapshot(doc(db, "invites", inviteId), (docSnap) => {
       if (docSnap.exists()) {
         setInviteData(docSnap.data());
       }
-    };
-    fetchInvite();
+    });
+    return () => unsub();
+  }, [inviteId]);
+
+  useEffect(() => {
+    if (!inviteId) return;
+    const pollsRef = collection(db, "invites", inviteId, "polls");
+    const unsub = onSnapshot(pollsRef, (snapshot) => {
+      const activePollsList = snapshot.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((p: any) => p.isActive);
+      setPolls(activePollsList);
+    });
+    return () => unsub();
   }, [inviteId]);
 
   useEffect(() => {
@@ -83,6 +96,16 @@ export default function Guest() {
         respondedAt: new Date(),
       });
       console.log("✅ Writing to path:", `invites/${inviteId}/guests/${guestName}`);
+
+      await addDoc(collection(db, "invites", inviteId, "notifications"), {
+        type: "rsvp",
+        guestName: guestName.trim(),
+        attending,
+        eventName: inviteData?.eventName || "Your Event",
+        createdAt: serverTimestamp(),
+        read: false,
+      });
+
       alert("Your RSVP has been saved!");
     } catch (error) {
       console.error("Error saving RSVP:", error);
@@ -209,6 +232,24 @@ export default function Guest() {
           <div className = "flex gap-2">
             <PillButton onClick={handleSubmitRSVP}>Submit RSVP</PillButton>
           </div>
+
+          {polls.length > 0 && guestName.trim() && (
+            <>
+              <hr />
+              <p className="font-semibold text-lg">Polls</p>
+              {polls.map((poll: any) => (
+                <PollCard
+                  key={poll.id}
+                  pollId={poll.id}
+                  question={poll.question}
+                  options={poll.options}
+                  isActive={poll.isActive}
+                  inviteId={inviteId!}
+                  guestName={guestName.trim()}
+                />
+              ))}
+            </>
+          )}
         </>
       ) : (
         <p>Loading invitation...</p>

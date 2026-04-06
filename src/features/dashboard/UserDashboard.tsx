@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { collection, onSnapshot, query, where, type DocumentData } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where, orderBy, limit, updateDoc, type DocumentData } from "firebase/firestore";
+import { Bell } from "lucide-react";
 import PillButton from "src/app/utils/pillButton";
 import { auth, db } from "src/app/lib/firebase";
 
@@ -51,6 +52,10 @@ export default function UserDashboard(): React.ReactElement {
   const [events, setEvents] = useState<UserEventCardDto[]>([]);
   const [filter, setFilter] = useState<EventStatus | "all">("all");
   const [q, setQ] = useState("");
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const notifRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -124,6 +129,47 @@ export default function UserDashboard(): React.ReactElement {
     return () => unsub();
   }, [host]);
 
+  useEffect(() => {
+    if (!host || events.length === 0) return;
+    const unsubs = events.map((event) => {
+      const notifsRef = collection(db, "invites", event.id, "notifications");
+      return onSnapshot(
+        query(notifsRef, orderBy("createdAt", "desc"), limit(20)),
+        (snapshot) => {
+          const eventNotifs = snapshot.docs.map((d) => ({
+            id: d.id,
+            eventId: event.id,
+            ...d.data(),
+          }));
+          setNotifications((prev) => {
+            const filtered = prev.filter((n) => n.eventId !== event.id);
+            return [...filtered, ...eventNotifs].sort(
+              (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+            );
+          });
+        }
+      );
+    });
+    return () => unsubs.forEach((fn) => fn());
+  }, [host, events]);
+
+  useEffect(() => {
+    if (!showNotifications) return;
+    const handleClick = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showNotifications]);
+
+  const handleMarkRead = async (notif: any) => {
+    if (notif.read) return;
+    const notifDocRef = doc(db, "invites", notif.eventId, "notifications", notif.id);
+    await updateDoc(notifDocRef, { read: true });
+  };
+
   const list = useMemo(() => {
     return events
       .filter(e => (filter === "all" ? true : e.status === filter))
@@ -154,6 +200,45 @@ export default function UserDashboard(): React.ReactElement {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Your events</h1>
         <div className="flex items-center gap-2">
+          <div ref={notifRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 rounded-full hover:bg-gray-100"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border rounded-2xl shadow-lg z-50 max-h-96 overflow-y-auto">
+                <div className="p-3 border-b font-semibold text-sm">Notifications</div>
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500">No notifications yet.</div>
+                ) : (
+                  notifications.map((n) => (
+                    <button
+                      key={`${n.eventId}-${n.id}`}
+                      className={`w-full text-left px-4 py-3 border-b text-sm hover:bg-gray-50 ${
+                        !n.read ? "bg-blue-50" : ""
+                      }`}
+                      onClick={() => handleMarkRead(n)}
+                    >
+                      <p className="font-medium">
+                        {n.guestName} RSVP'd "{n.attending}" to {n.eventName}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {n.createdAt?.toDate?.()?.toLocaleString() ?? "Just now"}
+                      </p>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <PillButton to="/">New Event</PillButton>
           <PillButton
             type="button"

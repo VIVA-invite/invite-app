@@ -5,8 +5,9 @@ import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Calendar, MapPin, Users, ListChecks, Plus, Eye, Pencil } from "lucide-react";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { doc, getDoc, getDocs, updateDoc, collection, onSnapshot, type DocumentData } from "firebase/firestore";
+import { doc, getDoc, getDocs, updateDoc, addDoc, collection, onSnapshot, serverTimestamp, type DocumentData } from "firebase/firestore";
 import PillButton from "src/app/utils/pillButton";
+import PollCard from "../components/PollCard";
 import { auth, db } from "../lib/firebase";
 import { useInvitation } from "../utils/invitationContext";
 
@@ -73,6 +74,11 @@ export default function HostEvent(): ReactElement {
     noResponse: 0,
   });
   const [rsvpByGuest, setRsvpByGuest] = useState<Record<string, "yes" | "maybe" | "no">>({});
+
+  const [polls, setPolls] = useState<Array<{ id: string; question: string; options: Array<{ id: string; label: string }>; isActive: boolean }>>([]);
+  const [showPollForm, setShowPollForm] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -150,6 +156,42 @@ useEffect(() => {
 
     return () => unsub();
   }, [inviteId, invite]);
+
+  useEffect(() => {
+    if (!inviteId) return;
+    const pollsRef = collection(db, "invites", inviteId, "polls");
+    const unsub = onSnapshot(pollsRef, (snapshot) => {
+      const pollList = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as { question: string; options: Array<{ id: string; label: string }>; isActive: boolean }),
+      }));
+      setPolls(pollList);
+    });
+    return () => unsub();
+  }, [inviteId]);
+
+  const handleCreatePoll = async () => {
+    if (!inviteId || !pollQuestion.trim()) return;
+    const validOptions = pollOptions.filter((o) => o.trim());
+    if (validOptions.length < 2) {
+      alert("Add at least 2 options");
+      return;
+    }
+    await addDoc(collection(db, "invites", inviteId, "polls"), {
+      question: pollQuestion.trim(),
+      options: validOptions.map((label, i) => ({ id: `opt-${i}`, label: label.trim() })),
+      isActive: true,
+      createdAt: serverTimestamp(),
+    });
+    setPollQuestion("");
+    setPollOptions(["", ""]);
+    setShowPollForm(false);
+  };
+
+  const handleTogglePoll = async (pollId: string, newState: boolean) => {
+    if (!inviteId) return;
+    await updateDoc(doc(db, "invites", inviteId, "polls", pollId), { isActive: newState });
+  };
 
   const formatMinutes = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -659,6 +701,79 @@ useEffect(() => {
               {invite?.customMessage || 'Add a custom note for your guests.'}
             </p>
           )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-white shadow">
+        <div className="p-4 border-b flex items-center justify-between">
+          <span className="font-semibold">Polls</span>
+          <PillButton type="button" onClick={() => setShowPollForm(!showPollForm)}>
+            {showPollForm ? "Cancel" : "+ New Poll"}
+          </PillButton>
+        </div>
+        <div className="p-4 space-y-4">
+          {showPollForm && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCreatePoll();
+              }}
+              className="space-y-3 border rounded-xl p-4"
+            >
+              <input
+                placeholder="Poll question"
+                value={pollQuestion}
+                onChange={(e) => setPollQuestion(e.target.value)}
+                className="w-full border rounded-lg px-3 py-2"
+                required
+              />
+              {pollOptions.map((opt, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    placeholder={`Option ${i + 1}`}
+                    value={opt}
+                    onChange={(e) => {
+                      const copy = [...pollOptions];
+                      copy[i] = e.target.value;
+                      setPollOptions(copy);
+                    }}
+                    className="flex-1 border rounded-lg px-3 py-2"
+                  />
+                  {pollOptions.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
+                      className="text-red-500 text-sm"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <PillButton type="button" onClick={() => setPollOptions([...pollOptions, ""])}>
+                  + Add Option
+                </PillButton>
+                <PillButton type="submit">Create Poll</PillButton>
+              </div>
+            </form>
+          )}
+          {polls.length > 0
+            ? polls.map((poll) => (
+                <PollCard
+                  key={poll.id}
+                  pollId={poll.id}
+                  question={poll.question}
+                  options={poll.options}
+                  isActive={poll.isActive}
+                  inviteId={inviteId!}
+                  isHost
+                  onToggleActive={handleTogglePoll}
+                />
+              ))
+            : !showPollForm && (
+                <p className="text-gray-500 text-sm">No polls yet. Create one to engage your guests.</p>
+              )}
         </div>
       </div>
     </div>
