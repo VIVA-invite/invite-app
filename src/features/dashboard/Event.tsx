@@ -4,17 +4,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Calendar, MapPin, Users, ListChecks, Plus, Settings } from "lucide-react";
-import { onAuthStateChanged, type User } from "firebase/auth";
 import { collection, doc, getDoc, onSnapshot, type DocumentData } from "firebase/firestore";
 import PillButton from "src/app/utils/pillButton";
-import { auth, db } from "src/app/lib/firebase";
+import { db } from "src/app/lib/firebase";
+import { useAuth } from "src/app/utils/authContext";
 
-// Minimal UI wrappers (replace with shadcn/ui if installed)
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
-// A Card is just a styled container with optional header/content slots.
 function Card({ children, className = "", ...props }: CardProps): React.ReactElement {
   return <div className={`border rounded-xl bg-white shadow ${className}`} {...props}>{children}</div>;
 }
@@ -47,10 +45,10 @@ interface InviteDoc extends DocumentData {
 
 function Stat({ label, value }: { label: string; value: string | number }): React.ReactElement {
   return (
-    <div className="flex flex-col">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-2xl font-semibold">{value}</span>
-    </div>
+      <div className="flex flex-col">
+        <span className="text-sm text-gray-500">{label}</span>
+        <span className="text-2xl font-semibold">{value}</span>
+      </div>
   );
 }
 
@@ -65,23 +63,21 @@ function formatMinutes(mins: number): string {
 export default function EventDashboard(): React.ReactElement {
   const { inviteId } = useParams();
   const navigate = useNavigate();
-  const [host, setHost] = useState<User | null>(auth.currentUser);
-  const [authReady, setAuthReady] = useState(false);
+  const { host, authReady } = useAuth(); // ← 替换掉原来的 useState + onAuthStateChanged
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [invite, setInvite] = useState<InviteDoc | null>(null);
   const [rsvp, setRsvp] = useState({ going: 0, maybe: 0, declined: 0, noResponse: 0 });
 
+  // 只在 authReady 确认后才判断是否需要跳转登录
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setHost(user);
-      setAuthReady(true);
-      if (!user) {
-        navigate(`/hostLogIn?redirect=${encodeURIComponent(`/host/events/${inviteId}/overview`)}`, { replace: true });
-      }
-    });
-    return () => unsub();
-  }, [inviteId, navigate]);
+    if (authReady && !host) {
+      navigate(
+          `/hostLogIn?redirect=${encodeURIComponent(`/host/events/${inviteId}/overview`)}`,
+          { replace: true }
+      );
+    }
+  }, [authReady, host, inviteId, navigate]);
 
   useEffect(() => {
     if (!inviteId) {
@@ -95,22 +91,18 @@ export default function EventDashboard(): React.ReactElement {
     setError(null);
 
     getDoc(doc(db, "invites", inviteId))
-      .then((snap) => {
-        if (!snap.exists()) {
-          throw new Error("Invite not found.");
-        }
-        if (!cancelled) setInvite(snap.data() as InviteDoc);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setError((err as { message?: string }).message ?? "Failed to load invite.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        .then((snap) => {
+          if (!snap.exists()) throw new Error("Invite not found.");
+          if (!cancelled) setInvite(snap.data() as InviteDoc);
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) setError((err as { message?: string }).message ?? "Failed to load invite.");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [inviteId]);
 
   useEffect(() => {
@@ -142,8 +134,8 @@ export default function EventDashboard(): React.ReactElement {
 
   const dateLabel = invite?.date?.trim() || "Date to be decided";
   const timeLabel = invite?.startTime && invite?.endTime
-    ? `${invite.startTime} – ${invite.endTime}`
-    : invite?.startTime || invite?.endTime || "Time to be decided";
+      ? `${invite.startTime} – ${invite.endTime}`
+      : invite?.startTime || invite?.endTime || "Time to be decided";
   const locationLabel = invite?.location?.trim() || "Location to be decided";
 
   const actions = useMemo(() => ([
@@ -155,18 +147,18 @@ export default function EventDashboard(): React.ReactElement {
   const upcoming = useMemo(() => {
     if (!invite?.activities?.length) return [];
     return invite.activities
-      .slice()
-      .sort((a, b) => {
-        const ta = typeof a.time === "number" ? a.time : 0;
-        const tb = typeof b.time === "number" ? b.time : 0;
-        return ta - tb;
-      })
-      .slice(0, 3)
-      .map((act, idx) => ({
-        id: act.id ?? `act-${idx}`,
-        time: typeof act.time === "number" ? formatMinutes(act.time) : "TBD",
-        title: act.name || "Untitled activity",
-      }));
+        .slice()
+        .sort((a, b) => {
+          const ta = typeof a.time === "number" ? a.time : 0;
+          const tb = typeof b.time === "number" ? b.time : 0;
+          return ta - tb;
+        })
+        .slice(0, 3)
+        .map((act, idx) => ({
+          id: act.id ?? `act-${idx}`,
+          time: typeof act.time === "number" ? formatMinutes(act.time) : "TBD",
+          title: act.name || "Untitled activity",
+        }));
   }, [invite?.activities]);
 
   const rsvpSummary = useMemo(() => {
@@ -188,116 +180,114 @@ export default function EventDashboard(): React.ReactElement {
 
   if (!authReady || loading) {
     return (
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold">Event Dashboard</h1>
-        <p className="text-sm text-gray-600">Loading invitation details…</p>
-      </div>
+        <div className="p-6 space-y-4">
+          <h1 className="text-2xl font-bold">Event Dashboard</h1>
+          <p className="text-sm text-gray-600">Loading invitation details…</p>
+        </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold">Event Dashboard</h1>
-        <p className="text-sm text-red-600">{error}</p>
-        <PillButton to="/host">Back to dashboard</PillButton>
-      </div>
+        <div className="p-6 space-y-4">
+          <h1 className="text-2xl font-bold">Event Dashboard</h1>
+          <p className="text-sm text-red-600">{error}</p>
+          <PillButton to="/host">Back to dashboard</PillButton>
+        </div>
     );
   }
 
   if (!inviteBelongsToHost) {
     return (
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold">Event Dashboard</h1>
-        <p className="text-sm text-red-600">
-          This invite belongs to a different host account. Sign in with the correct username to continue.
-        </p>
-        <PillButton to="/host">Back to dashboard</PillButton>
-      </div>
+        <div className="p-6 space-y-4">
+          <h1 className="text-2xl font-bold">Event Dashboard</h1>
+          <p className="text-sm text-red-600">
+            This invite belongs to a different host account. Sign in with the correct username to continue.
+          </p>
+          <PillButton to="/host">Back to dashboard</PillButton>
+        </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{eventName}</h1>
-          <p className="text-gray-500 flex items-center gap-4 mt-2">
-            <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4"/>{dateLabel} • {timeLabel}</span>
-            <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4"/>{locationLabel}</span>
-          </p>
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{eventName}</h1>
+            <p className="text-gray-500 flex items-center gap-4 mt-2">
+              <span className="inline-flex items-center gap-2"><Calendar className="h-4 w-4"/>{dateLabel} • {timeLabel}</span>
+              <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4"/>{locationLabel}</span>
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <PillButton className="flex items-center gap-2"><Settings className="h-4 w-4"/>Settings</PillButton>
+            <PillButton className="flex items-center gap-2" to="/"><Plus className="h-4 w-4"/>Create New Event</PillButton>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <PillButton className="flex items-center gap-2"><Settings className="h-4 w-4"/>Settings</PillButton>
-          <PillButton className="flex items-center gap-2" to="/"><Plus className="h-4 w-4"/>New Event</PillButton>
+
+        {/* Top grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4"/>RSVP Summary</CardTitle></CardHeader>
+            <CardContent className="flex justify-between gap-4">
+              <Stat label="Going" value={rsvpSummary.going} />
+              <Stat label="Maybe" value={rsvpSummary.maybe} />
+              <Stat label="Declined" value={rsvpSummary.declined} />
+              <Stat label="No response" value={rsvpSummary.noResponse} />
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><ListChecks className="h-4 w-4"/>Quick Actions</CardTitle></CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {actions.map(a => (
+                  <Link
+                      key={a.id}
+                      to={a.to}
+                      state={{ mode: "edit", inviteId }}
+                      className="text-sm text-blue-600 hover:underline"
+                  >
+                    {a.label}
+                  </Link>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><MapPin className="h-4 w-4"/>Location</CardTitle></CardHeader>
+            <CardContent>
+              <div className="w-full h-40 rounded-xl bg-gray-100 flex items-center justify-center text-sm">Map preview</div>
+              <div className="text-xs text-gray-500 mt-2">Edit on the Location page to update map & saved pins.</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bottom grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card className="rounded-2xl lg:col-span-2">
+            <CardHeader className="pb-2"><CardTitle className="text-base">Timeline</CardTitle></CardHeader>
+            <CardContent>
+              <div className="w-full h-56 rounded-xl bg-gray-100 flex items-center justify-center text-sm">Timeline preview (drag/drop)</div>
+              <div className="text-xs text-gray-500 mt-2">Drag activities to adjust times. Open Activities page for full editor.</div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-2"><CardTitle className="text-base">Upcoming Activities</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              {upcoming.map(u => (
+                  <div key={u.id} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">{u.time}</span>
+                    <span className="font-medium">{u.title}</span>
+                  </div>
+              ))}
+              {upcoming.length === 0 && (
+                  <p className="text-sm text-gray-500">No activities yet.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Top grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4"/>RSVP Summary</CardTitle></CardHeader>
-          <CardContent className="flex justify-between gap-4">
-            <Stat label="Going" value={rsvpSummary.going} />
-            <Stat label="Maybe" value={rsvpSummary.maybe} />
-            <Stat label="Declined" value={rsvpSummary.declined} />
-            <Stat label="No response" value={rsvpSummary.noResponse} />
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><ListChecks className="h-4 w-4"/>Quick Actions</CardTitle></CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {actions.map(a => (
-              <Link
-                key={a.id}
-                to={a.to}
-                state={{ mode: "edit", inviteId }}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                {a.label}
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><MapPin className="h-4 w-4"/>Location</CardTitle></CardHeader>
-          <CardContent>
-            {/* Replace with your real map component later */}
-            <div className="w-full h-40 rounded-xl bg-gray-100 flex items-center justify-center text-sm">Map preview</div>
-            <div className="text-xs text-gray-500 mt-2">Edit on the Location page to update map & saved pins.</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="rounded-2xl lg:col-span-2">
-          <CardHeader className="pb-2"><CardTitle className="text-base">Timeline</CardTitle></CardHeader>
-          <CardContent>
-            {/* Replace with your draggable timeline component */}
-            <div className="w-full h-56 rounded-xl bg-gray-100 flex items-center justify-center text-sm">Timeline preview (drag/drop)</div>
-            <div className="text-xs text-gray-500 mt-2">Drag activities to adjust times. Open Activities page for full editor.</div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2"><CardTitle className="text-base">Upcoming Activities</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {upcoming.map(u => (
-              <div key={u.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">{u.time}</span>
-                <span className="font-medium">{u.title}</span>
-              </div>
-            ))}
-            {upcoming.length === 0 && (
-              <p className="text-sm text-gray-500">No activities yet.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
   );
 }

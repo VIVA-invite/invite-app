@@ -4,12 +4,14 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Calendar, MapPin, Users, ListChecks, Plus, Eye, Pencil } from "lucide-react";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+// import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { doc, getDoc, getDocs, updateDoc, addDoc, collection, onSnapshot, serverTimestamp, type DocumentData } from "firebase/firestore";
 import PillButton from "src/app/utils/pillButton";
 import PollCard from "../components/PollCard";
 import { auth, db } from "../lib/firebase";
 import { useInvitation } from "../utils/invitationContext";
+import { useAuth } from "../utils/authContext";
+import { signOut } from "firebase/auth";
 
 interface InviteDoc extends DocumentData {
   hostUid?: string;
@@ -56,8 +58,9 @@ export default function HostEvent(): ReactElement {
     setActivities,
   } = useInvitation();
 
-  const [host, setHost] = useState<User | null>(auth.currentUser);
-  const [authReady, setAuthReady] = useState(false);
+  // const [host, setHost] = useState<User | null>(auth.currentUser);
+  // const [authReady, setAuthReady] = useState(false);
+  const { host, authReady } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [invite, setInvite] = useState<InviteDoc | null>(null);
@@ -81,16 +84,11 @@ export default function HostEvent(): ReactElement {
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setHost(user);
-      setAuthReady(true);
-      if (!user) {
-        const redirectTarget = inviteId ? `/host/events/${inviteId}` : "/host/events";
-        navigate(`/hostLogIn?redirect=${encodeURIComponent(redirectTarget)}`, { replace: true });
-      }
-    });
-    return () => unsub();
-  }, [inviteId, navigate]);
+    if (authReady && !host) {
+      const redirectTarget = inviteId ? `/host/events/${inviteId}` : "/host/events";
+      navigate(`/hostLogIn?redirect=${encodeURIComponent(redirectTarget)}`, { replace: true });
+    }
+  }, [authReady, host, inviteId, navigate]);
 
   useEffect(() => {
     if (!inviteId) {
@@ -327,19 +325,7 @@ useEffect(() => {
     setStartTime("");
     setEndTime("");
     setActivities([]);
-    if (inviteUrl && typeof navigator !== "undefined") {
-      const clipboard = navigator.clipboard;
-      if (clipboard?.writeText) {
-        try {
-          await clipboard.writeText(inviteUrl);
-        } catch (error) {
-          console.error("Unable to copy invite link", error);
-        }
-      }
-    }
-
-    await signOut(auth).catch(() => undefined);
-    navigate("/", { replace: true });
+    navigate("/", { replace: true });  // 去掉 signOut，直接跳转
   };
 
   if (!authReady || loading) {

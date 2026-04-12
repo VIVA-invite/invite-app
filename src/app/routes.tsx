@@ -1,6 +1,3 @@
-/**
- * Routing for all the pages
- */
 import App from './root';
 import Index from './routes/index';
 import Invitee from './routes/invitee';
@@ -17,16 +14,17 @@ import EventName from './routes/eventName';
 import Polls from './routes/polls';
 import { InvitationProvider } from './utils/invitationContext';
 import { EventDashboard, UserDashboard } from '../features/dashboard';
-
+import { AuthProvider } from './utils/authContext';
 
 const routes = [
   {
     path: '/',
     element: (
-      <InvitationProvider>
-        <App />
-      </InvitationProvider>
-      
+        <AuthProvider>
+          <InvitationProvider>
+            <App />
+          </InvitationProvider>
+        </AuthProvider>
     ),
     children: [
       { index: true, element: <Index /> },
